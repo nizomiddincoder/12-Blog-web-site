@@ -11,6 +11,7 @@
 {# Oxirida yuklanadi — Django'ning forms/login/changelists CSS'laridan ustun turishi uchun #}
 <link rel="stylesheet" href="{% static 'admin_theme/admin.css' %}">
 <link rel="icon" href="{% site_favicon ss.initials %}">
+<script src="{% static 'admin_theme/admin.js' %}" defer></script>
 {% endblock %}
 
 {% block bodyclass %}{{ block.super }}{% if has_permission %} ds-shell{% endif %}{% endblock %}

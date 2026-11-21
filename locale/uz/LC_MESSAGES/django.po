@@ -171,6 +171,18 @@ msgstr "Xavfsizlik uchun avval eski parolingizni, so‘ng yangi parolni ikki mar
 msgid "Old password"
 msgstr "Eski parol"
 
+msgid "Toggle sorting"
+msgstr "Tartibni almashtirish"
+
+msgid "Sorting priority: %(priority_number)s"
+msgstr "Saralash ustuvorligi: %(priority_number)s"
+
+msgid "Select all objects on this page for an action"
+msgstr "Sahifadagi barcha yozuvlarni tanlash"
+
+msgid "Select this object for an action - {}"
+msgstr "Shu yozuvni tanlash - {}"
+
 msgid "groups"
 msgstr "guruhlar"
 

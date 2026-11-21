@@ -1,0 +1,95 @@
+{% extends "admin/base.html" %}
+{% load static admin_ui %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block responsive %}{{ block.super }}
+{% site_settings as ss %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+{# Oxirida yuklanadi — Django'ning forms/login/changelists CSS'laridan ustun turishi uchun #}
+<link rel="stylesheet" href="{% static 'admin_theme/admin.css' %}">
+<link rel="icon" href="{% site_favicon ss.initials %}">
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }}{% if has_permission %} ds-shell{% endif %}{% endblock %}
+
+{% block header %}
+{% site_settings as ss %}
+{% if has_permission %}
+  <aside class="ds-rail" aria-label="Bo'limlar">
+    <a class="ds-rail__logo" href="{% url 'admin:index' %}" title="{{ site_header }}">
+      {% if ss.avatar %}<img src="{{ ss.avatar.url }}" alt="">{% else %}{{ ss.initials }}{% endif %}
+    </a>
+    <nav class="ds-rail__nav">
+      <a href="{% url 'admin:index' %}" class="ds-rail__item{% if request.resolver_match.url_name == 'index' %} is-active{% endif %}">
+        <span class="ds-rail__label">Bosh sahifa</span>
+      </a>
+      {% for app in available_apps %}
+        <p class="ds-rail__group">{{ app.name }}</p>
+        {% for model in app.models %}
+          {% if model.admin_url %}
+          <a href="{{ model.admin_url }}" class="ds-rail__item{% if model.admin_url in request.path|urlencode %} is-active{% endif %}">
+            <span class="ds-rail__label">{{ model.name }}</span>
+            {% if model.object_name == "SocialAccount" %}
+              <span class="ds-favstack">{% favicon "telegram" 16 %}{% favicon "linkedin" 16 %}{% favicon "instagram" 16 %}</span>
+            {% endif %}
+          </a>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </nav>
+    <div class="ds-rail__foot">
+      {% if site_url %}<a class="ds-rail__item" href="{{ site_url }}"><span class="ds-rail__label">Saytni ko'rish</span></a>{% endif %}
+      <form method="post" action="{% url 'admin:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="ds-rail__item ds-rail__logout"><span class="ds-rail__label">Chiqish</span></button>
+      </form>
+    </div>
+  </aside>
+
+  <header id="header" class="ds-top">
+    <div class="ds-greet">
+      <span class="ds-avatar">
+        {% if ss.avatar %}<img src="{{ ss.avatar.url }}" alt="">{% else %}{{ ss.initials }}{% endif %}
+      </span>
+      <div>
+        <p class="ds-greet__title">Salom, {% firstof user.get_short_name user.get_username %}!</p>
+        <p class="ds-greet__sub">Kuningizni <b>{{ ss.full_name }}</b> paneli bilan boshlang</p>
+      </div>
+    </div>
+
+    <form class="ds-search" action="{% url 'admin:core_post_changelist' %}" method="get" role="search">
+      <input type="search" name="q" placeholder="Postlardan qidirish" aria-label="Postlardan qidirish" value="{{ request.GET.q|default:'' }}">
+    </form>
+
+    <details class="ds-account">
+      <summary>Akkauntim <span class="ds-caret" aria-hidden="true"></span></summary>
+      <div class="ds-account__menu">
+        <p class="ds-account__who">{% firstof user.get_full_name user.get_username %}</p>
+        {% if site_url %}<a href="{{ site_url }}">Saytni ko'rish</a>{% endif %}
+        {% if user.has_usable_password %}<a href="{% url 'admin:password_change' %}">Parolni o'zgartirish</a>{% endif %}
+        <button type="button" class="theme-toggle ds-theme">
+          Mavzu: <span class="ds-theme--auto">avtomatik</span><span class="ds-theme--light">yorug'</span><span class="ds-theme--dark">qorong'i</span>
+        </button>
+        <form method="post" action="{% url 'admin:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="ds-account__logout">Chiqish</button>
+        </form>
+      </div>
+    </details>
+  </header>
+{% else %}
+  <header id="header" class="ds-top ds-top--guest">
+    <div id="branding">
+      <span class="ds-avatar">
+        {% if ss.avatar %}<img src="{{ ss.avatar.url }}" alt="">{% else %}{{ ss.initials }}{% endif %}
+      </span>
+      <div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+    </div>
+  </header>
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

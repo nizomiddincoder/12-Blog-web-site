@@ -1,4 +1,5 @@
 {% extends "admin/base_site.html" %}
+{% load admin_ui %}
 
 {% block breadcrumbs %}
 <div class="breadcrumbs"><a href="{% url 'admin:index' %}">Bosh sahifa</a> › Ijtimoiy tarmoqlarni ulash</div>
@@ -6,48 +7,48 @@
 
 {% block content %}
 <div id="content-main">
-  <p>Post saqlanganda u shu yerda <b>tayyor</b> deb ko'rsatilgan platformalarga avtomatik yuboriladi.
+  <p class="ds-lead">Post saqlanganda u shu yerda <b>tayyor</b> deb ko'rsatilgan platformalarga avtomatik yuboriladi.
      Har bir platformani sozlash bosqichlari: loyihadagi <code>ULASH.md</code> qo'llanmasi.</p>
 
-  <table style="width:100%;margin-top:16px">
+  <table class="ds-connect">
     <thead>
       <tr><th>Platforma</th><th>Holat</th><th>Akkaunt</th><th>Muddati</th><th>Amal</th></tr>
     </thead>
     <tbody>
       {% for r in rows %}
       <tr>
-        <td><b>{{ r.label }}</b></td>
         <td>
-          {% if r.problem %}<span style="color:#dc2626">✗ {{ r.problem }}</span>
-          {% else %}<span style="color:#15803d">✓ Tayyor</span>{% endif %}
+          <span class="ds-connect__name">{% favicon r.key 22 %}{{ r.label }}</span>
+          {% if r.oauth %}
+            <div class="ds-connect__redirect">Redirect URL (ilova sozlamasiga shuni yozasiz): <code>{{ r.redirect_uri }}</code></div>
+          {% endif %}
+        </td>
+        <td>
+          {% if r.problem %}<span class="ds-pill ds-pill--failed">{{ r.problem }}</span>
+          {% else %}<span class="ds-pill ds-pill--success">Tayyor</span>{% endif %}
         </td>
         <td>
           {% if r.oauth %}{% if r.account %}{{ r.account.account_name|default:r.account.account_id }}{% else %}—{% endif %}
-          {% else %}.env orqali sozlanadi{% endif %}
+          {% else %}<span class="ds-muted">.env orqali sozlanadi</span>{% endif %}
         </td>
         <td>
-          {% if r.account.expires_at %}{{ r.account.expires_at|date:"j E Y" }} ({{ r.account.days_left }} kun qoldi){% else %}—{% endif %}
+          {% if r.account.expires_at %}{{ r.account.expires_at|date:"j E Y" }} <span class="ds-muted">({{ r.account.days_left }} kun qoldi)</span>{% else %}—{% endif %}
         </td>
         <td>
           {% if r.oauth %}
             {% if r.keys_present %}
               <a class="button" href="{% url 'connect_start' r.key %}">{% if r.account %}Qayta ulash{% else %}Ulash{% endif %}</a>
               {% if r.account %}
-              <form method="post" action="{% url 'connect_remove' r.key %}" style="display:inline">
-                {% csrf_token %}<button type="submit" class="button" style="background:#999">Uzish</button>
+              <form method="post" action="{% url 'connect_remove' r.key %}">
+                {% csrf_token %}<button type="submit" class="button ds-button--ghost">Uzish</button>
               </form>
               {% endif %}
             {% else %}
-              Avval kalitlarni kiriting
+              <span class="ds-muted">Avval kalitlarni kiriting</span>
             {% endif %}
-          {% endif %}
+          {% else %}—{% endif %}
         </td>
       </tr>
-      {% if r.oauth %}
-      <tr><td></td><td colspan="4" style="color:#777;font-size:12px">
-        Redirect URL (ilova sozlamasiga shuni yozasiz): <code>{{ r.redirect_uri }}</code>
-      </td></tr>
-      {% endif %}
       {% endfor %}
     </tbody>
   </table>

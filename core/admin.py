@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
 from . import publishers, publishing
+from .favicons import favicon_img, host_of
 from .media_utils import MEDIA_EXTENSIONS, extension
 from .models import (
     FAQ,
@@ -165,7 +166,7 @@ class ExperienceAdmin(admin.ModelAdmin):
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ("logo_preview", "name", "website", "is_visible", "order")
+    list_display = ("logo_preview", "name", "website_link", "is_visible", "order")
     list_display_links = ("logo_preview", "name")
     list_editable = ("is_visible", "order")
     search_fields = ("name",)
@@ -174,7 +175,16 @@ class CompanyAdmin(admin.ModelAdmin):
     def logo_preview(self, obj):
         if obj.logo:
             return format_html('<img src="{}" style="height:36px;max-width:90px;object-fit:contain">', obj.logo.url)
-        return "—"
+        return favicon_img(obj.website, 28) or "—"
+
+    @admin.display(description="Sayti", ordering="website")
+    def website_link(self, obj):
+        if not obj.website:
+            return "—"
+        return format_html(
+            '<a class="ds-link-fav" href="{}" target="_blank" rel="noopener">{}{}</a>',
+            obj.website, favicon_img(obj.website, 16), host_of(obj.website),
+        )
 
 
 @admin.register(Testimonial)
@@ -236,7 +246,7 @@ class PostDeliveryInline(admin.TabularInline):
     extra = 0
     can_delete = False
     verbose_name_plural = "Platformalardagi holat"
-    fields = ("platform", "status_badge", "link", "message", "sent_at")
+    fields = ("platform_name", "status_badge", "link", "message", "sent_at")
     readonly_fields = fields
 
     def has_add_permission(self, request, obj=None):
@@ -249,8 +259,17 @@ class PostDeliveryInline(admin.TabularInline):
     @admin.display(description="Havola")
     def link(self, obj):
         if obj.external_url:
-            return format_html('<a href="{}" target="_blank">Ochish ↗</a>', obj.external_url)
+            return format_html(
+                '<a class="ds-link-fav" href="{}" target="_blank" rel="noopener">{}Ochish</a>',
+                obj.external_url, favicon_img(obj.platform, 16),
+            )
         return "—"
+
+    @admin.display(description="Platforma")
+    def platform_name(self, obj):
+        return format_html(
+            '<span class="ds-link-fav">{}{}</span>', favicon_img(obj.platform, 18), obj.get_platform_display()
+        )
 
 
 class PostAdminForm(forms.ModelForm):
@@ -267,22 +286,31 @@ class PostAdminForm(forms.ModelForm):
         fields = "__all__"
 
 
-STATUS_COLORS = {
-    "scheduled": "#6b7280",
-    "queued": "#b7791f",
-    "sending": "#b7791f",
-    "sent": "#15803d",
-    "failed": "#dc2626",
-    "skipped": "#6b7280",
-    "deleted": "#6b7280",
+STATUS_TONES = {
+    "scheduled": "process",
+    "queued": "process",
+    "sending": "process",
+    "sent": "success",
+    "failed": "failed",
+    "skipped": "muted",
+    "deleted": "muted",
 }
-SHORT = {"telegram": "TG", "linkedin": "LI", "instagram": "IG"}
 
 
 def status_badge(delivery):
     return format_html(
-        '<b style="color:{}" title="{}">{}</b>',
-        STATUS_COLORS.get(delivery.status, "#6b7280"), delivery.message, delivery.get_status_display(),
+        '<span class="ds-pill ds-pill--{}" title="{}">{}</span>',
+        STATUS_TONES.get(delivery.status, "muted"), delivery.message, delivery.get_status_display(),
+    )
+
+
+def platform_chip(delivery):
+    """Platforma favicon'i + holat — bitta rangli chip."""
+    return format_html(
+        '<span class="ds-chip ds-chip--{}" title="{}: {} {}">{}{}</span>',
+        STATUS_TONES.get(delivery.status, "muted"), delivery.get_platform_display(),
+        delivery.get_status_display(), delivery.message, favicon_img(delivery.platform, 16),
+        delivery.get_status_display(),
     )
 
 
@@ -292,7 +320,7 @@ class PostAdmin(MediaUploadAdminMixin, admin.ModelAdmin):
     media_model = PostMedia
     media_fk = "post"
     inlines = [PostMediaInline, PostDeliveryInline]
-    list_display = ("title", "is_published", "published_at", "media_count", "platforms")
+    list_display = ("title", "site_state", "published_at", "media_count", "platforms")
     list_filter = ("is_published", "deliveries__platform", "deliveries__status", "published_at")
     search_fields = ("title", "content")
     date_hierarchy = "published_at"
@@ -319,15 +347,20 @@ class PostAdmin(MediaUploadAdminMixin, admin.ModelAdmin):
         deliveries = list(obj.deliveries.all())
         if not deliveries:
             return "—"
-        return format_html_join(
-            " ", '<span style="color:{};font-weight:600;white-space:nowrap" title="{}: {} {}">{} {}</span>',
-            (
-                (STATUS_COLORS.get(d.status, "#6b7280"), d.get_platform_display(), d.get_status_display(),
-                 d.message, SHORT.get(d.platform, d.platform), "✓" if d.status == "sent" else
-                 ("✗" if d.status == "failed" else "…" if d.status in ("queued", "sending", "scheduled") else "–"))
-                for d in deliveries
-            ),
+        return format_html(
+            '<span class="ds-chips">{}</span>',
+            format_html_join("", "{}", ((platform_chip(d),) for d in deliveries)),
         )
+
+    @admin.display(description="Saytda", ordering="is_published")
+    def site_state(self, obj):
+        if not obj.is_published:
+            tone, label = "muted", "Qoralama"
+        elif not obj.is_live:
+            tone, label = "process", "Rejada"
+        else:
+            tone, label = "success", "E'lon qilingan"
+        return format_html('<span class="ds-pill ds-pill--{}">{}</span>', tone, label)
 
     def render_change_form(self, request, context, *args, **kwargs):
         problems = [f"{p.label}: {p.problem()}" for p in publishers.PUBLISHERS.values() if p.problem()]

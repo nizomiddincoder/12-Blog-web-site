@@ -9,6 +9,7 @@ from core.sitemaps import sitemaps
 admin.site.site_header = "Boshqaruv paneli"
 admin.site.site_title = "Boshqaruv paneli"
 admin.site.index_title = "Sayt va Telegram kanalni boshqarish"
+admin.site.enable_nav_sidebar = False  # o'rniga templates/admin/base_site.html dagi qora panel
 
 urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),

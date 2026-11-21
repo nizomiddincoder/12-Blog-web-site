@@ -1,0 +1,142 @@
+{% extends "admin/base_site.html" %}
+{% load admin_ui l10n %}
+
+{% block bodyclass %}{{ block.super }} dashboard ds-dashboard{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block coltype %}colM{% endblock %}
+
+{% block content %}
+{% admin_dashboard as d %}{% site_settings as ss %}
+<div class="ds-dash">
+  <section class="ds-dash__main">
+
+    <div class="ds-section-head">
+      <h2>Ko'rsatkichlar</h2>
+      <a href="{% url 'admin:core_post_changelist' %}">Hammasi</a>
+    </div>
+
+    <div class="ds-cards">
+      <a class="ds-card ds-card--ink" href="{% url 'admin:core_post_changelist' %}">
+        <span class="ds-card__kicker">Postlar</span>
+        <span class="ds-card__value">{{ d.posts_total }} <small>ta</small></span>
+        <span class="ds-card__meta">Saytda {{ d.posts_live }} · Rejada {{ d.posts_scheduled }}</span>
+        <span class="ds-card__foot">
+          <span>{% if d.last_post %}{{ d.last_post.published_at|date:"d/m" }}{% else %}—{% endif %}</span>
+          <span class="ds-favstack ds-favstack--lg">{% favicon "telegram" 22 %}{% favicon "linkedin" 22 %}{% favicon "instagram" 22 %}</span>
+        </span>
+      </a>
+
+      <a class="ds-card" href="{% url 'admin:core_project_changelist' %}">
+        <span class="ds-card__kicker">Loyihalar</span>
+        <span class="ds-card__value">{{ d.projects_total }} <small>ta</small></span>
+        <span class="ds-card__meta">Ko'rinadi {{ d.projects_visible }} · Bosh sahifada {{ d.projects_featured }}</span>
+        <span class="ds-card__foot">
+          <span>{% if d.last_project %}{{ d.last_project.created_at|date:"d/m" }}{% else %}—{% endif %}</span>
+          {% if d.company_sites %}
+            <span class="ds-favstack ds-favstack--lg">{% for url in d.company_sites %}{% favicon url 22 %}{% endfor %}</span>
+          {% else %}
+            <span class="ds-dots" aria-hidden="true"><i></i><i></i></span>
+          {% endif %}
+        </span>
+      </a>
+    </div>
+
+    <div class="ds-actions">
+      <a class="ds-action is-primary" href="{% url 'admin:core_post_add' %}"><span class="ds-action__badge">+</span>Yangi post</a>
+      <a class="ds-action" href="{% url 'admin:core_project_add' %}"><span class="ds-action__badge">+</span>Loyiha</a>
+      <a class="ds-action" href="{% url 'admin:core_sitesettings_changelist' %}"><span class="ds-action__badge">{{ ss.initials }}</span>Sozlamalar</a>
+      <a class="ds-action" href="{% url 'admin:core_socialaccount_changelist' %}"><span class="ds-action__badge ds-action__badge--fav">{% favicon "telegram" 20 %}</span>Ulanishlar</a>
+    </div>
+
+    <div class="ds-section-head">
+      <h2>So'nggi postlar</h2>
+      <a href="{% url 'admin:core_post_changelist' %}">Hammasi</a>
+    </div>
+
+    <div class="ds-table" role="table" aria-label="So'nggi postlar">
+      <div class="ds-table__head" role="row">
+        <span role="columnheader">Sarlavha</span>
+        <span role="columnheader">Sana</span>
+        <span role="columnheader">Holat</span>
+        <span role="columnheader">Platformalar</span>
+      </div>
+      {% for row in d.recent_posts %}
+        <a class="ds-table__row" role="row" href="{% url 'admin:core_post_change' row.post.pk %}">
+          <span class="ds-table__title" role="cell">
+            <span class="ds-thumb">
+              {% if row.cover and row.cover.is_image %}<img src="{{ row.cover.file.url }}" alt="">{% else %}{{ row.post.title|slice:":1"|upper }}{% endif %}
+            </span>
+            <span class="ds-ellipsis">{{ row.post.title }}</span>
+          </span>
+          <span class="ds-muted" role="cell">{{ row.post.published_at|date:"j M, Y" }}</span>
+          <span role="cell"><span class="ds-pill ds-pill--{{ row.tone }}">{{ row.state }}</span></span>
+          <span class="ds-favs" role="cell">
+            {% for p in row.platforms %}{% favicon p 18 %}{% empty %}<span class="ds-muted">—</span>{% endfor %}
+          </span>
+        </a>
+      {% empty %}
+        <p class="ds-empty">Hali post yo'q. <a href="{% url 'admin:core_post_add' %}">Birinchi postni yozing</a>.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <aside class="ds-dash__side ds-panel">
+    <div class="ds-panel__head">
+      <h2>Statistika</h2>
+      <form method="get">
+        <select name="period" class="ds-select" onchange="this.form.submit()" aria-label="Davr">
+          {% for key, label in d.periods %}<option value="{{ key }}"{% if key == d.period %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <noscript><button type="submit">OK</button></noscript>
+      </form>
+    </div>
+
+    {% localize off %}
+    <div class="ds-donut">
+      <svg viewBox="0 0 180 180" role="img" aria-label="Yuborildi: {{ d.deliveries_sent }} / {{ d.deliveries_total }}">
+        <circle cx="{{ d.donut.c }}" cy="{{ d.donut.c }}" r="{{ d.donut.r }}" class="ds-donut__rest{% if not d.deliveries_total %} is-empty{% endif %}"/>
+        {% if d.deliveries_sent %}
+        <circle cx="{{ d.donut.c }}" cy="{{ d.donut.c }}" r="{{ d.donut.r }}" class="ds-donut__sent"
+                stroke-dasharray="{{ d.donut.sent_len }} {{ d.donut.circ }}" transform="rotate(-90 {{ d.donut.c }} {{ d.donut.c }})"/>
+        {% endif %}
+      </svg>
+      <div class="ds-donut__center">
+        <span>Jami</span>
+        <strong>{{ d.deliveries_total }}</strong>
+      </div>
+      {% if d.deliveries_sent %}
+        <span class="ds-donut__tip" style="left:{{ d.donut.tip_x }}%;top:{{ d.donut.tip_y }}%">{{ d.donut.share }}%</span>
+      {% endif %}
+    </div>
+    {% endlocalize %}
+
+    <ul class="ds-legend">
+      <li><i class="ds-legend__sent"></i>Yuborildi · {{ d.deliveries_sent }}</li>
+      <li><i class="ds-legend__rest"></i>Boshqa holatlar · {{ d.deliveries_other }}</li>
+    </ul>
+
+    <ul class="ds-feed">
+      {% for item in d.recent_deliveries %}
+        <li>
+          <span class="ds-feed__tile ds-feed__tile--{{ item.status|tone }}">{% favicon item.platform 22 %}</span>
+          <span class="ds-feed__body">
+            <span class="ds-feed__name">{{ item.get_platform_display }} <small>{{ item.get_status_display }}</small></span>
+            <span class="ds-feed__sub ds-ellipsis">{{ item.post.title }} · {{ item.updated_at|timesince }} oldin</span>
+          </span>
+          {% if item.external_url %}
+            <a class="ds-feed__link" href="{{ item.external_url }}" target="_blank" rel="noopener">Ochish</a>
+          {% else %}
+            <a class="ds-feed__link" href="{% url 'admin:core_post_change' item.post_id %}">Post</a>
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="ds-empty">{{ d.period_label }} hech narsa yuborilmagan.</li>
+      {% endfor %}
+    </ul>
+  </aside>
+</div>
+{% endblock %}
+
+{% block sidebar %}{% endblock %}

@@ -113,6 +113,37 @@ Instagram ilovalaridagi redirect manzilini ham yangilang.
 
 ---
 
+## 5b-bosqich. Instagram — Make.com orqali (Meta developer akkaunti ochilmasa)
+
+Sayt postni Make.com'ga yuboradi, Make esa uni Instagram'ga joylaydi.
+
+1. **Instagram'ni Facebook sahifaga bog'lash.** Make'ning Instagram moduli shuni talab qiladi.
+   Instagram → Profilni tahrirlash → **Sahifa** → Facebook sahifangizni tanlang.
+   Sahifa bo'lmasa, Facebook'da yarating.
+2. **Make → Scenarios → Create a new scenario.**
+3. **Birinchi modul:** "+" → **Webhooks → Custom webhook** → **Add** → nom: `Blog Instagram` → **Save**.
+   Chiqqan manzilni (`https://hook....make.com/...`) **Copy address** bilan nusxalang.
+4. **Railway Variables:** `MAKE_INSTAGRAM_WEBHOOK_URL=<shu manzil>` → deploy tugashini kuting.
+5. **Ma'lumot tuzilishini o'rgatish:** Make'da webhook modulida **Redetermine data structure** tugmasini
+   bosing ("waiting for data"). Keyin admin panel → **Ijtimoiy tarmoqlarni ulash** → Instagram →
+   **Make'ga namuna yuborish**. Make'da "Successfully determined" chiqadi.
+6. **Router:** webhook'dan keyin "+" → **Flow Control → Router** → 3 ta yo'l (route). Har yo'lga filtr
+   qo'ying (kalit belgisi): `type` **Equal to** `photo` / `carousel` / `reel`.
+7. **Instagram modullari** ("Instagram for Business" ilovasi; birinchi marta **Add connection** → Facebook
+   bilan kirib, ruxsat berasiz):
+   - **photo** yo'li → **Create a Photo Post**: Photo URL = `image_url`, Caption = `caption`.
+   - **carousel** yo'li → **Create a Carousel Post**: Files → **Map** → `media` massivi;
+     media turi = `media_type`, URL = `url`. Caption = `caption`.
+   - **reel** yo'li → **Create a Reel Post**: Video URL = `video_url`, Caption = `caption`.
+8. Pastdagi **Save** tugmasini bosing va scenariyni **ON** qiling (Immediately as data arrives).
+9. Sinov: rasmli post qo'shing → Make → **History** bo'limida yashil belgini ko'rasiz, post Instagram'da chiqadi.
+
+> Admin paneldagi "Yuborildi" — post Make'ga topshirildi degani. Instagram'ga chiqqani Make'ning History
+> bo'limida ko'rinadi. Namuna faqat tuzilishni o'rgatish uchun: scenariy yoqilgan paytda bosmang,
+> aks holda namuna ham Instagram'ga joylanishi mumkin.
+
+---
+
 ## 6-bosqich. Foydalanish
 
 Admin → **Postlar → Qo'shish**:

@@ -29,6 +29,7 @@
         </td>
         <td>
           {% if r.oauth %}{% if r.account %}{{ r.account.account_name|default:r.account.account_id }}{% else %}—{% endif %}
+          {% elif r.webhook %}<span class="ds-muted">Make.com orqali</span>
           {% else %}<span class="ds-muted">.env orqali sozlanadi</span>{% endif %}
         </td>
         <td>
@@ -46,6 +47,10 @@
             {% else %}
               <span class="ds-muted">Avval kalitlarni kiriting</span>
             {% endif %}
+          {% elif r.webhook %}
+            <form method="post" action="{% url 'connect_sample' r.key %}">
+              {% csrf_token %}<button type="submit" class="button" title="Make'da 'Redetermine data structure' kutayotganda bosing">Make'ga namuna yuborish</button>
+            </form>
           {% else %}—{% endif %}
         </td>
       </tr>

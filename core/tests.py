@@ -254,6 +254,35 @@ class SocialPublisherTests(TestCase):
         with Image.open(copy) as img:
             self.assertAlmostEqual(img.width / img.height, 0.8, places=2)
 
+    @override_settings(MAKE_INSTAGRAM_WEBHOOK_URL="https://hook.eu2.make.com/abc", INSTAGRAM_APP_ID="")
+    def test_instagram_via_make_webhook(self):
+        publisher = instagram.InstagramPublisher()
+        self.assertTrue(publisher.is_ready())  # akkaunt ulamasdan ham tayyor
+        self.assertFalse(publisher.uses_oauth)
+        post = self.make_post([("a.jpg", jpeg_bytes()), ("b.jpg", jpeg_bytes())])
+        fake = FakeHTTP({("POST", "hook.eu2.make.com"): FakeResponse(payload={})})
+        with mock.patch("core.publishers.base.requests.request", side_effect=fake):
+            result = publisher.publish(post)
+        payload = fake.calls[0][2]["json"]
+        self.assertEqual(payload["type"], "carousel")
+        self.assertFalse(payload["test"])
+        self.assertEqual([m["media_type"] for m in payload["media"]], ["IMAGE", "IMAGE"])
+        self.assertTrue(payload["image_url"].startswith("https://misol.uz/media/posts/"))
+        self.assertIn("Sarlavha", payload["caption"])
+        self.assertIn("Make", result.warnings[-1])
+
+        # bitta video -> reel
+        video_post = Post.objects.create(title="Video")
+        PostMedia.objects.create(post=video_post, file=SimpleUploadedFile("v.mp4", b"0000"))
+        with mock.patch("core.publishers.base.requests.request", side_effect=fake):
+            publisher.publish(video_post)
+        self.assertEqual(fake.calls[-1][2]["json"]["type"], "reel")
+
+        # namuna
+        with mock.patch("core.publishers.base.requests.request", side_effect=fake):
+            sample = publisher.send_sample()
+        self.assertTrue(sample["test"])
+
     def test_instagram_skips_text_only(self):
         SocialAccount.objects.create(platform="instagram", account_id="1", access_token="T",
                                      expires_at=timezone.now() + timedelta(days=50))

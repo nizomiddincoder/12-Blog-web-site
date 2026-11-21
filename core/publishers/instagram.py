@@ -85,11 +85,19 @@ class InstagramPublisher(Publisher):
     key = "instagram"
     label = "Instagram"
     can_delete = False
-    uses_oauth = True
-    setup_hint = "INSTAGRAM_APP_ID va INSTAGRAM_APP_SECRET ko'rsatilmagan"
+    setup_hint = "MAKE_INSTAGRAM_WEBHOOK_URL (yoki INSTAGRAM_APP_ID/SECRET) ko'rsatilmagan"
+
+    @property
+    def via_webhook(self):
+        """Make.com orqali yuborish rejimi (Meta developer akkaunti kerak emas)."""
+        return bool(settings.MAKE_INSTAGRAM_WEBHOOK_URL)
+
+    @property
+    def uses_oauth(self):
+        return not self.via_webhook
 
     def keys_present(self):
-        return bool(settings.INSTAGRAM_APP_ID and settings.INSTAGRAM_APP_SECRET)
+        return self.via_webhook or bool(settings.INSTAGRAM_APP_ID and settings.INSTAGRAM_APP_SECRET)
 
     def problem(self):
         problem = super().problem()
@@ -187,8 +195,71 @@ class InstagramPublisher(Publisher):
             return base + media.file.storage.url(name)
         return base + media.file.url
 
+    # ------------------------------------------------------------------ Make.com
+    def build_payload(self, post, media, caption, test=False):
+        """Make.com uchun JSON. type: photo (1 rasm) / reel (1 video) / carousel (2–10 ta)."""
+        items = []
+        for m in media:
+            url = self._media_url(m)
+            items.append({
+                "media_type": "VIDEO" if m.is_video else "IMAGE",
+                "url": url,
+                "image_url": "" if m.is_video else url,
+                "video_url": url if m.is_video else "",
+            })
+        if len(items) == 1:
+            kind = "reel" if items[0]["media_type"] == "VIDEO" else "photo"
+        else:
+            kind = "carousel"
+        return {
+            "platform": "instagram",
+            "type": kind,
+            "test": test,
+            "post_id": post.pk,
+            "title": post.title,
+            "caption": caption,
+            "link": site_link(post),
+            "image_url": next((i["image_url"] for i in items if i["image_url"]), ""),
+            "video_url": next((i["video_url"] for i in items if i["video_url"]), ""),
+            "media": items,
+        }
+
+    def _post_webhook(self, payload):
+        resp = http("POST", settings.MAKE_INSTAGRAM_WEBHOOK_URL, json=payload,
+                    secrets=(settings.MAKE_INSTAGRAM_WEBHOOK_URL,), retries=2, timeout=(20, 200))
+        try:
+            data = resp.json()
+        except ValueError:
+            data = {}
+        return (data.get("permalink") or data.get("url") or "") if isinstance(data, dict) else ""
+
+    def send_sample(self):
+        """Make'ga namunaviy ma'lumot yuboradi — Make ma'lumot tuzilishini o'rganib olishi uchun."""
+        from core.models import Post
+
+        post = next((p for p in Post.objects.published().prefetch_related("media")[:30]
+                     if sum(1 for m in p.media.all() if m.is_image or m.is_video) >= 2), None)
+        if post:
+            media = [m for m in post.media.all() if m.is_image or m.is_video][:10]
+            payload = self.build_payload(post, media, build_caption(post, site_link(post)), test=True)
+        else:
+            base = public_site_url() or "https://example.com"
+            payload = {
+                "platform": "instagram", "type": "carousel", "test": True, "post_id": 0,
+                "title": "Namuna post", "caption": "Namuna matn", "link": base + "/blog/namuna/",
+                "image_url": base + "/media/namuna.jpg", "video_url": base + "/media/namuna.mp4",
+                "media": [
+                    {"media_type": "IMAGE", "url": base + "/media/namuna.jpg",
+                     "image_url": base + "/media/namuna.jpg", "video_url": ""},
+                    {"media_type": "VIDEO", "url": base + "/media/namuna.mp4",
+                     "image_url": "", "video_url": base + "/media/namuna.mp4"},
+                ],
+            }
+        self._post_webhook(payload)
+        return payload
+
+    # ------------------------------------------------------------------ Yuborish
     def publish(self, post):
-        account = self._account()
         if not public_site_url():
             raise PublishError("Instagram uchun sayt internetda bo'lishi kerak (SITE_URL).")
         media = [m for m in post.media.all() if m.is_image or m.is_video]
@@ -198,8 +269,14 @@ class InstagramPublisher(Publisher):
         if len(media) > 10:
             warnings.append("Instagram karuselida ko'pi bilan 10 ta fayl — birinchi 10 tasi yuborildi.")
             media = media[:10]
-
         caption = build_caption(post, site_link(post))
+
+        if self.via_webhook:
+            url = self._post_webhook(self.build_payload(post, media, caption))
+            warnings.append("Make.com'ga topshirildi. Instagram'ga chiqqanini Make → History bo'limida ko'rasiz.")
+            return Result([], url, warnings)
+
+        account = self._account()
         if len(media) == 1:
             m = media[0]
             if m.is_video:

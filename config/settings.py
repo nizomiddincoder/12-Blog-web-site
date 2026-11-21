@@ -100,6 +100,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "uz"
+# Django admin o'zbekcha tarjimasidagi kamchiliklar shu yerda to'ldirilgan (locale/uz/LC_MESSAGES)
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "Asia/Tashkent"
 USE_I18N = True
 USE_TZ = True
@@ -144,6 +146,8 @@ LINKEDIN_API_VERSION = os.getenv("LINKEDIN_API_VERSION", "202607").strip()
 INSTAGRAM_APP_ID = os.getenv("INSTAGRAM_APP_ID", "").strip()
 INSTAGRAM_APP_SECRET = os.getenv("INSTAGRAM_APP_SECRET", "").strip()
 INSTAGRAM_API_VERSION = os.getenv("INSTAGRAM_API_VERSION", "v25.0").strip()
+# Make.com orqali yuborish: berilsa, Instagram postlari shu webhook'ga ketadi (Meta ilovasi kerak emas).
+MAKE_INSTAGRAM_WEBHOOK_URL = os.getenv("MAKE_INSTAGRAM_WEBHOOK_URL", "").strip()
 
 # --- Telegram ---
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()

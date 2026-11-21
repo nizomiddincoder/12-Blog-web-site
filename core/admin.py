@@ -444,6 +444,7 @@ class SocialAccountAdmin(admin.ModelAdmin):
                 "account": accounts.get(p.key),
                 "problem": p.problem(),
                 "redirect_uri": redirect_uri(request, p.key) if p.uses_oauth else "",
+                "webhook": getattr(p, "via_webhook", False),
             })
         context = {
             **self.admin_site.each_context(request),

@@ -67,6 +67,22 @@ def connect_callback(request, platform):
 
 @staff_member_required
 @require_POST
+def connect_sample(request, platform):
+    """Make.com webhook'iga namunaviy ma'lumot yuboradi (Make tuzilishni o'rganishi uchun)."""
+    publisher = publishers.PUBLISHERS.get(platform)
+    if not publisher or not getattr(publisher, "via_webhook", False):
+        raise Http404
+    try:
+        publisher.send_sample()
+    except PublishError as exc:
+        messages.error(request, f"Namuna yuborilmadi: {exc}")
+    else:
+        messages.success(request, "Namuna Make.com'ga yuborildi. Make'da ma'lumot tuzilishi aniqlanganini tekshiring.")
+    return _back()
+
+
+@staff_member_required
+@require_POST
 def connect_remove(request, platform):
     publisher = _oauth_publisher(platform)
     SocialAccount.objects.filter(platform=platform).delete()

@@ -1,0 +1,208 @@
+# Django admin o'zbekcha tarjimasidagi kamchiliklarni to'ldiradi (loyiha darajasida).
+# O'zgartirgandan so'ng .mo faylni qayta yarating: python manage.py compilemessages
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8
+Language: uz
+Plural-Forms: nplurals=1; plural=0;
+"
+
+msgid "Add %(name)s"
+msgstr "%(name)s qo‘shish"
+
+msgid "Add %s"
+msgstr "%s qo‘shish"
+
+msgid "Home"
+msgstr "Bosh sahifa"
+
+msgid "History"
+msgstr "Tarix"
+
+msgid "Select %s to change"
+msgstr "%s — ro‘yxat"
+
+msgid "Select %s to view"
+msgstr "%s — ro‘yxat"
+
+msgid "Run"
+msgstr "Bajarish"
+
+msgid "Go"
+msgstr "Bajarish"
+
+msgid "Save and add another"
+msgstr "Saqlash va yana qo‘shish"
+
+msgid "Save and continue editing"
+msgstr "Saqlash va tahrirda qolish"
+
+msgid "Save and view"
+msgstr "Saqlash va ko‘rish"
+
+msgid "Save as new"
+msgstr "Yangi sifatida saqlash"
+
+msgid "Close"
+msgstr "Yopish"
+
+msgid "Show all"
+msgstr "Hammasini ko‘rsatish"
+
+msgid "%(full_result_count)s total"
+msgstr "jami %(full_result_count)s"
+
+msgid "Clear selection"
+msgstr "Tanlovni bekor qilish"
+
+msgid "Select all %(total_count)s %(module_name)s"
+msgstr "Barcha %(total_count)s ta %(module_name)sni tanlash"
+
+msgid "Click here to select the objects across all pages"
+msgstr "Barcha sahifalardagi yozuvlarni tanlash"
+
+msgid "0 of %(cnt)s selected"
+msgstr "%(cnt)s tadan 0 tasi tanlandi"
+
+msgid "Hide counts"
+msgstr "Sonini yashirish"
+
+msgid "Show counts"
+msgstr "Sonini ko‘rsatish"
+
+msgid "Clear all filters"
+msgstr "Filtrlarni tozalash"
+
+msgid " By %(filter_title)s "
+msgstr " %(filter_title)s bo‘yicha "
+
+msgid "None available"
+msgstr "Hozircha yo‘q"
+
+msgid "Change history: %s"
+msgstr "O‘zgarishlar tarixi: %s"
+
+msgid "Date/time"
+msgstr "Sana/vaqt"
+
+msgid "User"
+msgstr "Foydalanuvchi"
+
+msgid "Action"
+msgstr "Amal"
+
+msgid "Objects"
+msgstr "Yozuvlar"
+
+msgid "Yes, I’m sure"
+msgstr "Ha, o‘chirilsin"
+
+msgid "No, take me back"
+msgstr "Yo‘q, orqaga"
+
+msgid "Delete multiple objects"
+msgstr "Bir nechta yozuvni o‘chirish"
+
+msgid "Change selected %(model)s"
+msgstr "Tanlangan %(model)sni o‘zgartirish"
+
+msgid "Add another %(model)s"
+msgstr "Yana %(model)s qo‘shish"
+
+msgid "Delete selected %(model)s"
+msgstr "Tanlangan %(model)sni o‘chirish"
+
+msgid "View selected %(model)s"
+msgstr "Tanlangan %(model)sni ko‘rish"
+
+msgid "Log in"
+msgstr "Kirish"
+
+msgid "Log in again"
+msgstr "Qayta kirish"
+
+msgid "Forgotten your password or username?"
+msgstr "Parol yoki loginni unutdingizmi?"
+
+msgid "Password change"
+msgstr "Parolni o‘zgartirish"
+
+msgid "Change my password"
+msgstr "Parolni o‘zgartirish"
+
+msgid "Your password was changed."
+msgstr "Parolingiz o‘zgartirildi."
+
+msgid "New password:"
+msgstr "Yangi parol:"
+
+msgid "Confirm password:"
+msgstr "Parolni tasdiqlang:"
+
+msgid "Skip to main content"
+msgstr "Asosiy qismga o‘tish"
+
+msgid "Page not found"
+msgstr "Sahifa topilmadi"
+
+msgid "No action selected."
+msgstr "Hech qanday amal tanlanmadi."
+
+msgid "You may edit it again below."
+msgstr "Quyida yana tahrirlashingiz mumkin."
+
+msgid "The {name} “{obj}” was added successfully."
+msgstr "{name} «{obj}» qo‘shildi."
+
+msgid "The {name} “{obj}” was added successfully. You may edit it again below."
+msgstr "{name} «{obj}» qo‘shildi. Quyida yana tahrirlashingiz mumkin."
+
+msgid "The {name} “{obj}” was added successfully. You may add another {name} below."
+msgstr "{name} «{obj}» qo‘shildi. Quyida yana qo‘shishingiz mumkin."
+
+msgid "The {name} “{obj}” was changed successfully. You may edit it again below."
+msgstr "{name} «{obj}» saqlandi. Quyida yana tahrirlashingiz mumkin."
+
+msgid "The {name} “{obj}” was changed successfully. You may add another {name} below."
+msgstr "{name} «{obj}» saqlandi. Quyida yangisini qo‘shishingiz mumkin."
+
+msgid "Please enter your old password, for security’s sake, and then enter your new password twice so we can verify you typed it in correctly."
+msgstr "Xavfsizlik uchun avval eski parolingizni, so‘ng yangi parolni ikki marta kiriting."
+
+msgid "Old password"
+msgstr "Eski parol"
+
+msgid "groups"
+msgstr "guruhlar"
+
+msgid "group"
+msgstr "guruh"
+
+msgid "users"
+msgstr "foydalanuvchilar"
+
+msgid "user"
+msgstr "foydalanuvchi"
+
+msgid "Personal info"
+msgstr "Shaxsiy ma’lumotlar"
+
+msgid "Permissions"
+msgstr "Ruxsatlar"
+
+msgid "superuser status"
+msgstr "superfoydalanuvchi"
+
+msgid "staff status"
+msgstr "xodim"
+
+msgid "active"
+msgstr "faol"
+
+msgid "date joined"
+msgstr "ro‘yxatdan o‘tgan sana"
+
+msgid "last login"
+msgstr "oxirgi kirish"
+
+msgid "user permissions"
+msgstr "foydalanuvchi ruxsatlari"

@@ -13,4 +13,5 @@ urlpatterns = [
     path("connect/<str:platform>/", connect_views.connect_start, name="connect_start"),
     path("connect/<str:platform>/callback/", connect_views.connect_callback, name="connect_callback"),
     path("connect/<str:platform>/remove/", connect_views.connect_remove, name="connect_remove"),
+    path("connect/<str:platform>/sample/", connect_views.connect_sample, name="connect_sample"),
 ]

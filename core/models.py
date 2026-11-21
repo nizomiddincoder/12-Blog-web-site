@@ -360,6 +360,9 @@ class PostQuerySet(models.QuerySet):
         return self.filter(is_published=True, published_at__lte=timezone.now())
 
 
+from .stats_models import StatSnapshot  # noqa: E402,F401  (migratsiya va admin uchun)
+
+
 class Platform(models.TextChoices):
     TELEGRAM = "telegram", "Telegram"
     LINKEDIN = "linkedin", "LinkedIn"

@@ -146,6 +146,13 @@ LINKEDIN_API_VERSION = os.getenv("LINKEDIN_API_VERSION", "202607").strip()
 INSTAGRAM_APP_ID = os.getenv("INSTAGRAM_APP_ID", "").strip()
 INSTAGRAM_APP_SECRET = os.getenv("INSTAGRAM_APP_SECRET", "").strip()
 INSTAGRAM_API_VERSION = os.getenv("INSTAGRAM_API_VERSION", "v25.0").strip()
+# --- Statistika (Claude API + Composio MCP) ---
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5-5").strip()
+ANTHROPIC_MCP_BETA = os.getenv("ANTHROPIC_MCP_BETA", "mcp-client-2025-11-20").strip()
+COMPOSIO_MCP_URL = os.getenv("COMPOSIO_MCP_URL", "https://connect.composio.dev/mcp").strip()
+COMPOSIO_API_KEY = os.getenv("COMPOSIO_API_KEY", "").strip()
+
 # Make.com orqali yuborish: berilsa, Instagram postlari shu webhook'ga ketadi (Meta ilovasi kerak emas).
 MAKE_INSTAGRAM_WEBHOOK_URL = os.getenv("MAKE_INSTAGRAM_WEBHOOK_URL", "").strip()
 

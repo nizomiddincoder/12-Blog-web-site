@@ -296,6 +296,83 @@ class SocialPublisherTests(TestCase):
         self.assertIn("internetda", instagram.InstagramPublisher().problem())
 
 
+@override_settings(ANTHROPIC_API_KEY="sk-ant-test", COMPOSIO_API_KEY="cmp-test",
+                   COMPOSIO_MCP_URL="https://connect.composio.dev/mcp")
+class StatsSyncTests(TestCase):
+    CLAUDE_TEXT = json.dumps({
+        "instagram": {"followers": 1234, "media_count": 40,
+                      "recent_posts": [{"likes": 10, "comments": 2}, {"likes": 30, "comments": 4}]},
+        "youtube": None,
+        "errors": [],
+    })
+
+    def fake_response(self, text):
+        resp = mock.Mock(status_code=200)
+        resp.json.return_value = {"content": [{"type": "text", "text": text}]}
+        return resp
+
+    def test_sync_saves_metrics_and_sends_mcp_request(self):
+        from core import stats_sync
+        from core.stats_models import StatSnapshot
+
+        with mock.patch("core.stats_sync.requests.post", return_value=self.fake_response(self.CLAUDE_TEXT)) as post:
+            count = stats_sync.sync()
+        sent = post.call_args.kwargs["json"]
+        self.assertEqual(sent["mcp_servers"][0]["url"], "https://connect.composio.dev/mcp")
+        self.assertEqual(sent["mcp_servers"][0]["authorization_token"], "cmp-test")
+        self.assertEqual(sent["tools"][0]["type"], "mcp_toolset")
+        self.assertEqual(post.call_args.kwargs["headers"]["x-api-key"], "sk-ant-test")
+
+        self.assertEqual(count, 4)  # followers, media_count, avg_likes, avg_comments
+        values = dict(StatSnapshot.objects.values_list("metric", "value"))
+        self.assertEqual(values["followers"], 1234)
+        self.assertEqual(values["avg_likes_last5"], 20)
+        self.assertEqual(values["avg_comments_last5"], 3)
+        self.assertFalse(StatSnapshot.objects.filter(platform="youtube").exists())
+
+    def test_text_around_json_is_tolerated(self):
+        from core import stats_sync
+
+        with mock.patch("core.stats_sync.requests.post",
+                        return_value=self.fake_response("Mana natija:\n" + self.CLAUDE_TEXT + "\nRahmat")):
+            self.assertEqual(stats_sync.sync(), 4)
+
+    def test_bad_json_is_reported(self):
+        from core import stats_sync
+
+        with mock.patch("core.stats_sync.requests.post", return_value=self.fake_response("bu JSON emas")):
+            with self.assertRaises(stats_sync.StatsError):
+                stats_sync.sync()
+
+    def test_api_error_is_reported_without_key(self):
+        from core import stats_sync
+
+        resp = mock.Mock(status_code=401, text="invalid x-api-key")
+        with mock.patch("core.stats_sync.requests.post", return_value=resp):
+            with self.assertRaises(stats_sync.StatsError) as ctx:
+                stats_sync.sync()
+        self.assertNotIn("sk-ant-test", str(ctx.exception))
+
+    @override_settings(COMPOSIO_API_KEY="")
+    def test_missing_key_is_clear(self):
+        from core import stats_sync
+
+        with self.assertRaisesMessage(stats_sync.StatsError, "COMPOSIO_API_KEY"):
+            stats_sync.build_request()
+
+    def test_sync_stats_command_skips_when_fresh(self):
+        from django.core.management import call_command
+        from io import StringIO
+        from core.stats_models import StatSnapshot
+
+        StatSnapshot.objects.create(platform="instagram", metric="followers", value=5)
+        out = StringIO()
+        with mock.patch("core.stats_sync.requests.post") as post:
+            call_command("sync_stats", "--if-stale", stdout=out)
+        post.assert_not_called()
+        self.assertIn("o'tkazib", out.getvalue())
+
+
 class TextTests(TestCase):
     def test_caption_is_truncated_to_limit(self):
         post = Post(title="Sarlavha", content="😀 so'z " * 500, slug="s")

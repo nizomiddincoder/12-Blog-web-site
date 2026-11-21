@@ -1,0 +1,16 @@
+{% load site_tags %}
+{# Rasmlar va videolar ASL faylidan ko'rsatiladi — hech qanday siqishsiz. #}
+{% if media %}
+<div class="gallery gallery-{% if media|length == 1 %}single{% else %}multi{% endif %}">
+  {% for m in media %}
+  <figure class="gallery-item{% if m.is_video %} is-video{% endif %}" style="aspect-ratio: {{ m|aspect }}">
+    {% if m.is_video %}
+      <video src="{{ m.file.url }}" controls playsinline preload="metadata"{% if m.width %} width="{{ m.width }}" height="{{ m.height }}"{% endif %}></video>
+    {% else %}
+      <img src="{{ m.file.url }}" alt="{{ m.caption|default:title }}" class="js-lightbox" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"{% if m.width %} width="{{ m.width }}" height="{{ m.height }}"{% endif %}>
+    {% endif %}
+    {% if m.caption %}<figcaption>{{ m.caption }}</figcaption>{% endif %}
+  </figure>
+  {% endfor %}
+</div>
+{% endif %}

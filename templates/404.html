@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Sahifa topilmadi — {{ site.full_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">404</span>
+    <h1>Sahifa topilmadi</h1>
+    <p>Siz qidirgan sahifa o'chirilgan yoki manzil noto'g'ri.</p>
+    <div class="hero-actions"><a class="btn btn-lg" href="{% url 'home' %}">Bosh sahifaga qaytish</a></div>
+  </div>
+</section>
+{% endblock %}

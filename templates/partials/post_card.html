@@ -1,0 +1,10 @@
+<article class="card">
+  <a class="card-media" href="{{ post.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+    {% include "partials/media_thumb.html" with m=post.cover fallback=post.title %}
+  </a>
+  <div class="card-body">
+    <time class="card-meta" datetime="{{ post.published_at|date:'c' }}">{{ post.published_at|date:"j E Y" }}</time>
+    <h3><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h3>
+    {% if post.content %}<p>{{ post.content|truncatechars:130 }}</p>{% endif %}
+  </div>
+</article>

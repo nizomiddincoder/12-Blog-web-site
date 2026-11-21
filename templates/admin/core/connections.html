@@ -1,0 +1,55 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Bosh sahifa</a> › Ijtimoiy tarmoqlarni ulash</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <p>Post saqlanganda u shu yerda <b>tayyor</b> deb ko'rsatilgan platformalarga avtomatik yuboriladi.
+     Har bir platformani sozlash bosqichlari: loyihadagi <code>ULASH.md</code> qo'llanmasi.</p>
+
+  <table style="width:100%;margin-top:16px">
+    <thead>
+      <tr><th>Platforma</th><th>Holat</th><th>Akkaunt</th><th>Muddati</th><th>Amal</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td><b>{{ r.label }}</b></td>
+        <td>
+          {% if r.problem %}<span style="color:#dc2626">✗ {{ r.problem }}</span>
+          {% else %}<span style="color:#15803d">✓ Tayyor</span>{% endif %}
+        </td>
+        <td>
+          {% if r.oauth %}{% if r.account %}{{ r.account.account_name|default:r.account.account_id }}{% else %}—{% endif %}
+          {% else %}.env orqali sozlanadi{% endif %}
+        </td>
+        <td>
+          {% if r.account.expires_at %}{{ r.account.expires_at|date:"j E Y" }} ({{ r.account.days_left }} kun qoldi){% else %}—{% endif %}
+        </td>
+        <td>
+          {% if r.oauth %}
+            {% if r.keys_present %}
+              <a class="button" href="{% url 'connect_start' r.key %}">{% if r.account %}Qayta ulash{% else %}Ulash{% endif %}</a>
+              {% if r.account %}
+              <form method="post" action="{% url 'connect_remove' r.key %}" style="display:inline">
+                {% csrf_token %}<button type="submit" class="button" style="background:#999">Uzish</button>
+              </form>
+              {% endif %}
+            {% else %}
+              Avval kalitlarni kiriting
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      {% if r.oauth %}
+      <tr><td></td><td colspan="4" style="color:#777;font-size:12px">
+        Redirect URL (ilova sozlamasiga shuni yozasiz): <code>{{ r.redirect_uri }}</code>
+      </td></tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+<article class="card">
+  <a class="card-media" href="{{ project.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+    {% if project.cover %}
+      <img src="{{ project.cover.url }}" alt="{{ project.title }}" loading="lazy">
+    {% else %}
+      {% include "partials/media_thumb.html" with m=project.media.all.0 fallback=project.title %}
+    {% endif %}
+  </a>
+  <div class="card-body">
+    <div class="card-meta">{{ project.client }}{% if project.client and project.year %} · {% endif %}{{ project.year }}</div>
+    <h3><a href="{{ project.get_absolute_url }}">{{ project.title }}</a></h3>
+    {% if project.summary %}<p>{{ project.summary }}</p>{% endif %}
+    {% if project.tag_list %}<ul class="tags">{% for t in project.tag_list %}<li>{{ t }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+</article>

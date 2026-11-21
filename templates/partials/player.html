@@ -1,0 +1,12 @@
+{# Minimal video pleyer: src — video manzili, poster — rasm (ixtiyoriy) #}
+<div class="player js-player">
+  <video src="{{ src }}" preload="metadata" playsinline{% if poster %} poster="{{ poster.url }}"{% endif %}></video>
+  <button class="player-big" type="button" aria-label="Ijro etish"><i class="bi bi-play-fill"></i></button>
+  <div class="player-bar">
+    <button type="button" data-act="toggle" aria-label="Ijro / pauza"><i class="bi bi-play-fill"></i></button>
+    <span data-el="time">0:00</span>
+    <div class="player-track" data-el="track"><div class="player-fill" data-el="fill"></div></div>
+    <button type="button" data-act="mute" aria-label="Ovoz"><i class="bi bi-volume-up"></i></button>
+    <button type="button" data-act="full" aria-label="To'liq ekran"><i class="bi bi-arrows-fullscreen"></i></button>
+  </div>
+</div>

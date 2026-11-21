@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} — {{ site.full_name }}{% endblock %}
+{% block description %}{{ post.content|truncatechars:160 }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.content|truncatechars:200 }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if post.cover and post.cover.is_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ post.cover.file.url }}">{% else %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block content %}
+<article class="article">
+  <div class="container narrow">
+    <a class="back" href="{% url 'post_list' %}"><i class="bi bi-arrow-left"></i> Blog</a>
+    {% if not post.is_live %}<p class="notice">Bu post hali saytda e'lon qilinmagan — uni faqat admin ko'ryapti.</p>{% endif %}
+    <div><time class="card-meta" datetime="{{ post.published_at|date:'c' }}">{{ post.published_at|date:"j E Y" }}</time></div>
+    <h1>{{ post.title }}</h1>
+    {% include "partials/gallery.html" with title=post.title %}
+    {% if post.content %}<div class="prose">{{ post.content|urlize|linebreaks }}</div>{% endif %}
+
+    <div class="share">
+      <span class="muted">Ulashish:</span>
+      <a class="round-btn" href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode }}&text={{ post.title|urlencode }}" target="_blank" rel="noopener" aria-label="Telegram"><i class="bi bi-telegram"></i></a>
+      <a class="round-btn" href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+      <a class="round-btn" href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+      <button type="button" class="round-btn js-copy" data-url="{{ request.build_absolute_uri }}" aria-label="Havolani nusxalash"><i class="bi bi-link-45deg"></i></button>
+    </div>
+
+    {% if site.telegram_channel_url %}
+    <div class="subscribe">
+      <span><strong>Telegram kanalimga obuna bo'ling</strong><br><span class="small">Yangi postlar birinchi u yerda chiqadi</span></span>
+      <a class="btn" href="{{ site.telegram_channel_url }}" target="_blank" rel="noopener"><i class="bi bi-telegram"></i> Obuna bo'lish</a>
+    </div>
+    {% endif %}
+
+    <nav class="prev-next">
+      {% if older %}<a href="{{ older.get_absolute_url }}"><span>← Oldingi</span>{{ older.title }}</a>{% else %}<span></span>{% endif %}
+      {% if newer %}<a class="next" href="{{ newer.get_absolute_url }}"><span>Keyingi →</span>{{ newer.title }}</a>{% endif %}
+    </nav>
+  </div>
+</article>
+{% endblock %}

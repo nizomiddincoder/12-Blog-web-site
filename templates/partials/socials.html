@@ -1,0 +1,7 @@
+{% if site.social_links %}
+<ul class="socials">
+  {% for s in site.social_links %}
+  <li><a href="{{ s.url }}" target="_blank" rel="noopener" aria-label="{{ s.name }}" title="{{ s.name }}"><i class="bi {{ s.icon }}"></i></a></li>
+  {% endfor %}
+</ul>
+{% endif %}

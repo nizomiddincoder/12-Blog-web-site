@@ -1,0 +1,11 @@
+{# Kartochkadagi muqova: m — media obyekt (yoki None), fallback — matn #}
+{% if m %}
+  {% if m.is_video %}
+    <video src="{{ m.file.url }}#t=0.1" preload="metadata" muted playsinline></video>
+    <span class="play-badge"><i class="bi bi-play-fill"></i></span>
+  {% else %}
+    <img src="{{ m.file.url }}" alt="{{ m.caption|default:fallback }}" loading="lazy">
+  {% endif %}
+{% else %}
+  <span class="thumb-fallback">{{ fallback|slice:":1"|upper }}</span>
+{% endif %}

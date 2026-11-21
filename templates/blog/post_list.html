@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Blog — {{ site.full_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Blog</span>
+    <h1>Yangiliklar va maqolalar</h1>
+    <form class="search" method="get" role="search">
+      <i class="bi bi-search"></i>
+      <input type="search" name="q" value="{{ query }}" placeholder="Qidirish..." aria-label="Qidirish">
+    </form>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    {% if page.object_list %}
+      <div class="grid grid-3">
+        {% for post in page.object_list %}{% include "partials/post_card.html" %}{% endfor %}
+      </div>
+      {% if page.has_other_pages %}
+      <nav class="pagination" aria-label="Sahifalar">
+        {% if page.has_previous %}<a class="round-btn" href="?page={{ page.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="Oldingi"><i class="bi bi-arrow-left"></i></a>{% endif %}
+        <span>{{ page.number }} / {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a class="round-btn" href="?page={{ page.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="Keyingi"><i class="bi bi-arrow-right"></i></a>{% endif %}
+      </nav>
+      {% endif %}
+    {% else %}
+      <p class="empty">{% if query %}«{{ query }}» bo'yicha hech narsa topilmadi.{% else %}Hozircha postlar yo'q.{% endif %}</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

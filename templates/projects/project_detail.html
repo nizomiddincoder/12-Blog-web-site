@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} — {{ site.full_name }}{% endblock %}
+{% block description %}{{ project.summary|default:project.description|truncatechars:160 }}{% endblock %}
+{% block og_title %}{{ project.title }}{% endblock %}
+{% block og_image %}{% if project.cover %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ project.cover.url }}">{% else %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block content %}
+<article class="article">
+  <div class="container narrow">
+    <a class="back" href="{% url 'project_list' %}"><i class="bi bi-arrow-left"></i> Barcha ishlar</a>
+    <h1>{{ project.title }}</h1>
+    {% if project.summary %}<p class="lead">{{ project.summary }}</p>{% endif %}
+    <dl class="meta">
+      {% if project.client %}<div><dt>Mijoz</dt><dd>{{ project.client }}</dd></div>{% endif %}
+      {% if project.year %}<div><dt>Yil</dt><dd>{{ project.year }}</dd></div>{% endif %}
+      {% if project.url %}<div><dt>Havola</dt><dd><a href="{{ project.url }}" target="_blank" rel="noopener">Ochish ↗</a></dd></div>{% endif %}
+    </dl>
+    {% if project.tag_list %}<ul class="tags">{% for t in project.tag_list %}<li>{{ t }}</li>{% endfor %}</ul>{% endif %}
+
+    {% if project.cover %}
+    <div class="gallery gallery-single">
+      <figure class="gallery-item"><img src="{{ project.cover.url }}" alt="{{ project.title }}" class="js-lightbox"></figure>
+    </div>
+    {% endif %}
+    {% if project.description %}<div class="prose">{{ project.description|urlize|linebreaks }}</div>{% endif %}
+    {% include "partials/gallery.html" with title=project.title %}
+  </div>
+</article>
+
+{% if others %}
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Boshqa ishlarim</h2></div>
+    <div class="grid grid-3">
+      {% for project in others %}{% include "partials/project_card.html" %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Maxfiylik siyosati — {{ site.full_name }}{% endblock %}
+
+{% block content %}
+<article class="article">
+  <div class="container narrow">
+    <span class="eyebrow">Hujjat</span>
+    <h1>Maxfiylik siyosati</h1>
+    <div class="prose">
+      <p>Ushbu sayt ({{ request.get_host }}) — {{ site.full_name }}ning shaxsiy sayti. Sayt tashrif buyuruvchilardan
+      shaxsiy ma'lumot to'plamaydi, ro'yxatdan o'tish yoki to'lov talab qilmaydi.</p>
+      <p><strong>Ijtimoiy tarmoqlar bilan bog'lanish.</strong> Sayt egasi o'z LinkedIn va Instagram akkauntlarini
+      ulab, saytdagi postlarini shu akkauntlarga joylaydi. Buning uchun platformalar bergan ruxsat kaliti (token)
+      faqat post joylash maqsadida, himoyalangan serverda saqlanadi va uchinchi shaxslarga berilmaydi.
+      Boshqa foydalanuvchilarning ma'lumotlari o'qilmaydi va saqlanmaydi.</p>
+      <p><strong>Ma'lumotni o'chirish.</strong> Akkaunt istalgan vaqtda admin paneldan uziladi va token darhol
+      o'chiriladi. Shuningdek, platformaning o'z sozlamalaridan ilovaga berilgan ruxsatni bekor qilish mumkin.</p>
+      <p><strong>Cookie.</strong> Sayt faqat admin panelga kirish uchun zarur texnik cookie'lardan foydalanadi.</p>
+      {% if site.email %}<p><strong>Aloqa:</strong> <a href="mailto:{{ site.email }}">{{ site.email }}</a></p>{% endif %}
+    </div>
+  </div>
+</article>
+{% endblock %}

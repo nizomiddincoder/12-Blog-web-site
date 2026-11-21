@@ -1,0 +1,304 @@
+import io
+import json
+import shutil
+import tempfile
+from datetime import timedelta
+from unittest import mock
+
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
+from django.urls import reverse
+from django.utils import timezone
+from PIL import Image
+
+from core import publishing
+from core.models import Post, PostDelivery, PostMedia, SiteSettings, SocialAccount
+from core.publishers import instagram, linkedin
+from core.publishers import telegram as tg
+
+TMP_MEDIA = tempfile.mkdtemp()
+Status = PostDelivery.Status
+
+
+def jpeg_bytes(size=(1600, 900), fmt="JPEG"):
+    buf = io.BytesIO()
+    Image.new("RGB", size, (10, 120, 200)).save(buf, fmt, quality=98)
+    return buf.getvalue()
+
+
+class FakeResponse:
+    def __init__(self, result=None, status=200, headers=None, payload=None):
+        self.status_code = status
+        self.headers = headers or {}
+        self._payload = payload if payload is not None else {"ok": True, "result": result}
+        self.text = json.dumps(self._payload)
+
+    def json(self):
+        return self._payload
+
+
+class FakeTelegram:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, url, data=None, files=None, timeout=None):
+        method = url.rsplit("/", 1)[1]
+        self.calls.append((method, data, files))
+        if method == "sendMediaGroup":
+            return FakeResponse([{"message_id": i} for i in range(len(json.loads(data["media"])))])
+        return FakeResponse({"message_id": 1} if method != "deleteMessages" else True)
+
+
+class SyncThread:
+    """Testda fon oqimi o'rniga darhol bajaradi."""
+
+    def __init__(self, target, args, daemon=None):
+        self.target, self.args = target, args
+
+    def start(self):
+        items, repost = self.args
+        for post_id, platform in items:
+            publishing.run(post_id, platform, repost=repost)
+
+
+TG = dict(TELEGRAM_BOT_TOKEN="1:T", TELEGRAM_CHANNEL_ID="@kanal")
+NO_SOCIAL = dict(LINKEDIN_CLIENT_ID="", LINKEDIN_CLIENT_SECRET="", INSTAGRAM_APP_ID="", INSTAGRAM_APP_SECRET="")
+
+
+@override_settings(MEDIA_ROOT=TMP_MEDIA, SITE_URL="https://misol.uz", **TG, **NO_SOCIAL)
+class AdminFlowTests(TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TMP_MEDIA, ignore_errors=True)
+
+    def setUp(self):
+        self.admin = get_user_model().objects.create_superuser("boss", "b@example.com", "x-pass-123")
+        self.client.force_login(self.admin)
+
+    def add_post(self, **extra):
+        data = {
+            "title": "Admin orqali post", "content": "Matn", "is_published": "on",
+            "published_at_0": "2020-01-01", "published_at_1": "10:00:00",
+            "send_to_telegram": "on", "send_to_linkedin": "on", "send_to_instagram": "on", "slug": "",
+            "media-TOTAL_FORMS": "0", "media-INITIAL_FORMS": "0",
+            "media-MIN_NUM_FORMS": "0", "media-MAX_NUM_FORMS": "1000",
+            "deliveries-TOTAL_FORMS": "0", "deliveries-INITIAL_FORMS": "0",
+            "deliveries-MIN_NUM_FORMS": "0", "deliveries-MAX_NUM_FORMS": "1000",
+        }
+        data.update(extra)
+        return self.client.post(reverse("admin:core_post_add"), data)
+
+    def send(self, fake, **extra):
+        with mock.patch("core.publishers.telegram.requests.post", side_effect=fake), \
+                mock.patch("core.publishing.threading.Thread", SyncThread), \
+                self.captureOnCommitCallbacks(execute=True):
+            return self.add_post(**extra)
+
+    def test_upload_keeps_original_bytes_and_sends_only_to_ready_platforms(self):
+        raw = jpeg_bytes()
+        fake = FakeTelegram()
+        response = self.send(fake, new_media=[SimpleUploadedFile("a.jpg", raw), SimpleUploadedFile("b.jpg", raw)])
+        self.assertEqual(response.status_code, 302)
+
+        post = Post.objects.get()
+        media = list(post.media.all())
+        with media[0].file.open("rb") as fh:
+            self.assertEqual(fh.read(), raw)  # bayt-ma-bayt bir xil
+        self.assertEqual((media[0].width, media[0].height), (1600, 900))
+
+        deliveries = {d.platform: d for d in post.deliveries.all()}
+        self.assertEqual(set(deliveries), {"telegram"})  # LinkedIn/Instagram ulanmagan
+        self.assertEqual(deliveries["telegram"].status, Status.SENT)
+        self.assertEqual(deliveries["telegram"].external_url, "https://t.me/kanal/0")
+        sent = json.loads(fake.calls[0][1]["media"])
+        self.assertEqual([m["type"] for m in sent], ["document", "document"])
+        self.assertIn("https://misol.uz/blog/", sent[0]["caption"])
+
+    def test_editing_does_not_resend(self):
+        fake = FakeTelegram()
+        self.send(fake)
+        post = Post.objects.get()
+        fake.calls.clear()
+        with mock.patch("core.publishers.telegram.requests.post", side_effect=fake), \
+                self.captureOnCommitCallbacks(execute=True):
+            self.client.post(reverse("admin:core_post_change", args=[post.pk]), {
+                "title": "Yangi sarlavha", "content": "x", "is_published": "on",
+                "published_at_0": "2020-01-01", "published_at_1": "10:00:00", "send_to_telegram": "on",
+                "slug": post.slug, "media-TOTAL_FORMS": "0", "media-INITIAL_FORMS": "0",
+                "deliveries-TOTAL_FORMS": "0", "deliveries-INITIAL_FORMS": "0",
+            })
+        self.assertEqual(fake.calls, [])
+
+    def test_compressed_mode_uses_photos(self):
+        SiteSettings.objects.update_or_create(pk=1, defaults={"telegram_media_mode": "compressed"})
+        fake = FakeTelegram()
+        self.send(fake, new_media=[SimpleUploadedFile("a.jpg", jpeg_bytes())])
+        self.assertEqual(fake.calls[0][0], "sendPhoto")
+
+    def test_future_post_is_scheduled_then_sent(self):
+        fake = FakeTelegram()
+        future = timezone.localtime() + timedelta(days=1)
+        self.send(fake, published_at_0=future.strftime("%Y-%m-%d"), published_at_1=future.strftime("%H:%M:%S"))
+        delivery = PostDelivery.objects.get()
+        self.assertEqual(delivery.status, Status.SCHEDULED)
+        self.assertEqual(fake.calls, [])
+        Post.objects.update(published_at=timezone.now() - timedelta(minutes=1))
+        with mock.patch("core.publishers.telegram.requests.post", side_effect=fake):
+            publishing.run_scheduled()
+        delivery.refresh_from_db()
+        self.assertEqual(delivery.status, Status.SENT)
+
+    def test_unpublished_post_is_not_sent(self):
+        fake = FakeTelegram()
+        self.send(fake, is_published="")
+        self.assertEqual(fake.calls, [])
+        self.assertFalse(PostDelivery.objects.exists())
+
+    def test_rejects_unknown_file_type(self):
+        response = self.add_post(new_media=[SimpleUploadedFile("x.exe", b"MZ")])
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Post.objects.exists())
+
+    def test_failure_is_recorded(self):
+        def boom(*a, **k):
+            return FakeResponse(status=400, payload={"ok": False, "description": "Bad Request: chat not found"})
+
+        self.send(boom)
+        delivery = PostDelivery.objects.get()
+        self.assertEqual(delivery.status, Status.FAILED)
+        self.assertIn("chat not found", delivery.message)
+
+    def test_connections_page(self):
+        response = self.client.get(reverse("admin:core_socialaccount_changelist"))
+        self.assertContains(response, "LinkedIn")
+        self.assertContains(response, "/connect/instagram/callback/")
+
+
+class FakeHTTP:
+    """requests.request o'rnini bosuvchi: (method, url-qismi) bo'yicha javob qaytaradi."""
+
+    def __init__(self, routes):
+        self.routes, self.calls = routes, []
+
+    def __call__(self, method, url, **kwargs):
+        self.calls.append((method, url, kwargs))
+        for (m, part), resp in self.routes.items():
+            if m == method and part in url:
+                return resp(kwargs) if callable(resp) else resp
+        raise AssertionError(f"Kutilmagan so'rov: {method} {url}")
+
+
+@override_settings(
+    MEDIA_ROOT=TMP_MEDIA, SITE_URL="https://misol.uz",
+    LINKEDIN_CLIENT_ID="li", LINKEDIN_CLIENT_SECRET="sec", LINKEDIN_API_VERSION="202607",
+    INSTAGRAM_APP_ID="ig", INSTAGRAM_APP_SECRET="sec2", INSTAGRAM_API_VERSION="v25.0",
+)
+class SocialPublisherTests(TestCase):
+    def make_post(self, files=()):
+        post = Post.objects.create(title="Sarlavha (test) #yangilik", content="Matn_1 *muhim*")
+        for i, (name, data) in enumerate(files):
+            PostMedia.objects.create(post=post, file=SimpleUploadedFile(name, data), order=i)
+        return post
+
+    def test_linkedin_multi_image_post(self):
+        SocialAccount.objects.create(platform="linkedin", account_id="abc", access_token="TOK",
+                                     expires_at=timezone.now() + timedelta(days=50))
+        post = self.make_post([("a.jpg", jpeg_bytes()), ("b.png", jpeg_bytes(fmt="PNG"))])
+        counter = iter(range(10))
+        fake = FakeHTTP({
+            ("POST", "/rest/images?action=initializeUpload"): lambda kw: FakeResponse(payload={"value": {
+                "uploadUrl": "https://upload.example/x", "image": f"urn:li:image:{next(counter)}"}}),
+            ("PUT", "upload.example"): FakeResponse(payload={}),
+            ("POST", "/rest/posts"): FakeResponse(status=201, payload={}, headers={"x-restli-id": "urn:li:share:9"}),
+        })
+        with mock.patch("core.publishers.base.requests.request", side_effect=fake):
+            result = linkedin.LinkedInPublisher().publish(post)
+        body = fake.calls[-1][2]["json"]
+        self.assertEqual(body["author"], "urn:li:person:abc")
+        self.assertEqual(len(body["content"]["multiImage"]["images"]), 2)
+        self.assertIn("Sarlavha \\(test\\) {hashtag|\\#|yangilik}", body["commentary"])
+        self.assertIn("Matn\\_1 \\*muhim\\*", body["commentary"])
+        self.assertEqual(fake.calls[-1][2]["headers"]["LinkedIn-Version"], "202607")
+        self.assertEqual(result.url, "https://www.linkedin.com/feed/update/urn:li:share:9/")
+
+    def test_linkedin_expired_token(self):
+        SocialAccount.objects.create(platform="linkedin", account_id="abc", access_token="T",
+                                     expires_at=timezone.now() - timedelta(days=1))
+        self.assertIn("muddati", linkedin.LinkedInPublisher().problem())
+
+    def test_instagram_carousel_and_jpeg_copy(self):
+        SocialAccount.objects.create(platform="instagram", account_id="17841", access_token="IGT",
+                                     expires_at=timezone.now() + timedelta(days=50))
+        # PNG va juda tik rasm -> Instagram uchun JPEG nusxa yasaladi; asl fayl o'zgarmaydi
+        png = jpeg_bytes((600, 2000), "PNG")
+        post = self.make_post([("tik.png", png), ("b.jpg", jpeg_bytes())])
+        ids = iter(range(100, 200))
+        fake = FakeHTTP({
+            ("POST", "/17841/media_publish"): FakeResponse(payload={"id": "999"}),
+            ("POST", "/17841/media"): lambda kw: FakeResponse(payload={"id": str(next(ids))}),
+            ("GET", "/999"): FakeResponse(payload={"permalink": "https://instagram.com/p/x"}),
+            ("GET", "graph.instagram.com/v25.0/1"): FakeResponse(payload={"status_code": "FINISHED"}),
+        })
+        with mock.patch("core.publishers.base.requests.request", side_effect=fake):
+            result = instagram.InstagramPublisher().publish(post)
+        creates = [c[2]["data"] for c in fake.calls if c[0] == "POST" and c[1].endswith("/media")]
+        self.assertTrue(creates[0]["image_url"].startswith("https://misol.uz/media/instagram/"))
+        self.assertTrue(creates[1]["image_url"].endswith("b.jpg"))
+        self.assertEqual(creates[2]["media_type"], "CAROUSEL")
+        self.assertEqual(result.url, "https://instagram.com/p/x")
+        with post.media.first().file.open("rb") as fh:
+            self.assertEqual(fh.read(), png)
+        copy = post.media.first().file.storage.open(creates[0]["image_url"].split("/media/")[1])
+        with Image.open(copy) as img:
+            self.assertAlmostEqual(img.width / img.height, 0.8, places=2)
+
+    def test_instagram_skips_text_only(self):
+        SocialAccount.objects.create(platform="instagram", account_id="1", access_token="T",
+                                     expires_at=timezone.now() + timedelta(days=50))
+        from core.publishers import Skip
+        with self.assertRaises(Skip):
+            instagram.InstagramPublisher().publish(self.make_post())
+
+    @override_settings(SITE_URL="")
+    def test_instagram_needs_public_site(self):
+        SocialAccount.objects.create(platform="instagram", account_id="1", access_token="T")
+        self.assertIn("internetda", instagram.InstagramPublisher().problem())
+
+
+class TextTests(TestCase):
+    def test_caption_is_truncated_to_limit(self):
+        post = Post(title="Sarlavha", content="😀 so'z " * 500, slug="s")
+        text, truncated = tg.build_text(post, tg.CAPTION_LIMIT, "https://misol.uz/blog/s/")
+        self.assertTrue(truncated)
+        visible = text.replace("<b>", "").replace("</b>", "").split("<a ")[0] + "Batafsil o'qish →"
+        self.assertLessEqual(tg._u16(visible), tg.CAPTION_LIMIT)
+
+    def test_html_is_escaped(self):
+        text, _ = tg.build_text(Post(title="<script>", content="a & b", slug="s"), 4096)
+        self.assertIn("&lt;script&gt;", text)
+        self.assertIn("a &amp; b", text)
+
+    def test_linkedin_text_limit(self):
+        text = linkedin.build_commentary(Post(title="T", content="so'z " * 2000), "https://misol.uz/blog/t/")
+        self.assertLessEqual(len(text), linkedin.TEXT_LIMIT + 200)  # escape belgilari hisobga olinmaydi
+
+
+class PageTests(TestCase):
+    def test_pages_render(self):
+        Post.objects.create(title="Salom dunyo", content="x")
+        for url in ["/", "/blog/", "/blog/salom-dunyo/", "/ishlar/", "/robots.txt", "/sitemap.xml", "/maxfiylik/"]:
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+
+    def test_cyrillic_slug(self):
+        self.assertEqual(Post.objects.create(title="Янги ўқув йили").slug, "yangi-oquv-yili")
+
+    def test_future_post_hidden(self):
+        Post.objects.create(title="Kelajak", published_at=timezone.now() + timedelta(days=1))
+        self.assertEqual(self.client.get("/blog/kelajak/").status_code, 404)
+
+    def test_connect_requires_staff(self):
+        response = self.client.get("/connect/linkedin/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("login", response["Location"])

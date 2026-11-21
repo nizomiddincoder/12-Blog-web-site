@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Qilgan ishlarim — {{ site.full_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container">
+    <span class="eyebrow">Portfolio</span>
+    <h1>Qilgan ishlarim</h1>
+  </div>
+</section>
+<section class="section">
+  <div class="container">
+    {% if projects %}
+      <div class="grid grid-2">
+        {% for project in projects %}{% include "partials/project_card.html" %}{% endfor %}
+      </div>
+    {% else %}
+      <p class="empty">Hozircha loyihalar qo'shilmagan.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+{# 1. Hero #}
+<section class="hero">
+  <div class="container">
+    {% if site.hero_badge %}<span class="eyebrow"><span class="dot"></span>{{ site.hero_badge }}</span>{% endif %}
+    <h1>{{ site.hero_title|default:site.full_name }}</h1>
+    {% if site.short_bio %}<p class="lead">{{ site.short_bio|linebreaksbr }}</p>{% endif %}
+
+    {% if site.hero_video %}
+    <div class="hero-video">
+      {% include "partials/player.html" with src=site.hero_video.url poster=site.hero_video_poster %}
+    </div>
+    {% endif %}
+
+    <div class="hero-actions">
+      <a class="btn btn-lg" href="#contact">Bog'lanish</a>
+      {% if projects %}<a class="btn btn-lg btn-ghost" href="#works">Qilgan ishlarim</a>{% endif %}
+      {% if site.resume %}<a class="btn btn-lg btn-ghost" href="{{ site.resume.url }}" download>CV yuklab olish</a>{% endif %}
+    </div>
+  </div>
+</section>
+
+{# 2. Kompaniyalar #}
+{% if companies %}
+<section class="section" id="companies">
+  <div class="container">
+    <div class="section-head">
+      <h2>Men bilan ishlagan kompaniyalar</h2>
+      <div class="logo-controls" data-for="logo-track">
+        <button class="round-btn" type="button" data-dir="-1" aria-label="Oldingi"><i class="bi bi-arrow-left"></i></button>
+        <button class="round-btn" type="button" data-dir="1" aria-label="Keyingi"><i class="bi bi-arrow-right"></i></button>
+      </div>
+    </div>
+    <ul class="logo-track" id="logo-track">
+      {% for c in companies %}
+      <li title="{{ c.description|default:c.name }}">
+        {% if c.website %}<a href="{{ c.website }}" target="_blank" rel="noopener">{% endif %}
+        {% if c.logo %}<img src="{{ c.logo.url }}" alt="{{ c.name }}" loading="lazy">{% else %}<span class="logo-name">{{ c.name }}</span>{% endif %}
+        {% if c.website %}</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{# 3. Xizmatlar #}
+{% if services %}
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Nima bilan shug'ullanaman</h2></div>
+    <div class="grid grid-2">
+      {% for s in services %}
+      <div class="card card-pad">
+        <span class="index">{{ forloop.counter|stringformat:"02d" }}</span>
+        <h3>{{ s.title }}</h3>
+        {% if s.description %}<p>{{ s.description|linebreaksbr }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 4. Men haqimda #}
+<section class="section" id="about">
+  <div class="container bio">
+    <div class="bio-photo">
+      {% if site.avatar %}<img src="{{ site.avatar.url }}" alt="{{ site.full_name }}" loading="lazy">{% else %}<span class="initials">{{ site.initials }}</span>{% endif %}
+    </div>
+    <div>
+      <h2>{{ site.full_name }}</h2>
+      {% if site.headline %}<p class="role">{{ site.headline }}</p>{% endif %}
+      {% if site.about %}<div class="prose">{{ site.about|urlize|linebreaks }}</div>{% endif %}
+      <ul class="facts">
+        {% if site.location %}<li><i class="bi bi-geo-alt"></i>{{ site.location }}</li>{% endif %}
+        {% if site.email %}<li><i class="bi bi-envelope"></i><a href="mailto:{{ site.email }}">{{ site.email }}</a></li>{% endif %}
+        {% if site.phone %}<li><i class="bi bi-telephone"></i><a href="tel:{{ site.phone|cut:' ' }}">{{ site.phone }}</a></li>{% endif %}
+      </ul>
+      {% include "partials/socials.html" %}
+      {% if stats %}
+      <div class="stats">
+        {% for s in stats %}<div><strong>{{ s.value }}</strong><span>{{ s.label }}</span></div>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{# 5. Tajriba #}
+{% if experiences %}
+<section class="section" id="experience">
+  <div class="container">
+    <div class="section-head"><h2>Ish faoliyatim</h2></div>
+    <ol class="roadmap">
+      {% for e in experiences %}
+      <li>
+        <div class="period">{{ e.period }}</div>
+        <div>
+          <h3>{{ e.role }}</h3>
+          <div class="company">{{ e.company }}</div>
+          {% if e.description %}<p>{{ e.description|linebreaksbr }}</p>{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+{% endif %}
+
+{# 6. Loyihalar #}
+{% if projects %}
+<section class="section" id="works">
+  <div class="container">
+    <div class="section-head">
+      <h2>Qilgan ishlarim</h2>
+      {% if projects_total > projects|length %}<a class="arrow-link" href="{% url 'project_list' %}">Barchasi <i class="bi bi-arrow-right"></i></a>{% endif %}
+    </div>
+    <div class="grid grid-2">
+      {% for project in projects %}{% include "partials/project_card.html" %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 7. Fikrlar #}
+{% if testimonials %}
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Men haqimda nima deyishadi</h2></div>
+    <div class="grid grid-2">
+      {% for t in testimonials %}
+      <figure class="card card-pad quote">
+        <blockquote>“{{ t.text }}”</blockquote>
+        <figcaption>
+          {% if t.photo %}<img src="{{ t.photo.url }}" alt="" loading="lazy">{% endif %}
+          <span><strong>{{ t.author }}</strong>{% if t.position %}<br><span class="muted">{{ t.position }}</span>{% endif %}</span>
+        </figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 8. Blog #}
+{% if posts %}
+<section class="section" id="blog">
+  <div class="container">
+    <div class="section-head">
+      <h2>So'nggi yangiliklar</h2>
+      <a class="arrow-link" href="{% url 'post_list' %}">Barcha postlar <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="grid grid-3">
+      {% for post in posts %}{% include "partials/post_card.html" %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 9. FAQ #}
+{% if faqs %}
+<section class="section" id="faq">
+  <div class="container">
+    <div class="section-head"><h2>Ko'p beriladigan savollar</h2></div>
+    <div class="faq">
+      {% for f in faqs %}
+      <details>
+        <summary>{{ f.question }}</summary>
+        <div class="answer">{{ f.answer|urlize|linebreaks }}</div>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# 10. Yakuniy chaqiriq #}
+<section class="section" id="contact">
+  <div class="container">
+    <div class="cta-strip">
+      <div>
+        <h2>{{ site.cta_title }}</h2>
+        {% if site.cta_text %}<p>{{ site.cta_text }}</p>{% endif %}
+      </div>
+      <div class="hero-actions" style="margin:0">
+        {% if site.telegram_url %}<a class="btn btn-lg" href="{{ site.telegram_url }}" target="_blank" rel="noopener"><i class="bi bi-telegram"></i> Telegramda yozish</a>{% endif %}
+        {% if site.email %}<a class="btn btn-lg btn-ghost" href="mailto:{{ site.email }}">Email yuborish</a>{% endif %}
+        {% if site.phone %}<a class="btn btn-lg btn-ghost" href="tel:{{ site.phone|cut:' ' }}">Qo'ng'iroq qilish</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% load static %}<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site.full_name }}{% if site.headline %} — {{ site.headline }}{% endif %}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ site.meta_description|default:site.short_bio|truncatechars:160 }}{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}{{ site.full_name }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ site.meta_description|default:site.short_bio|truncatechars:200 }}{% endblock %}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  {% block og_image %}{% if site.avatar %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ site.avatar.url }}">{% endif %}{% endblock %}
+  <meta name="theme-color" content="#ffffff">
+  {% if site.avatar %}<link rel="icon" href="{{ site.avatar.url }}">{% endif %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="wordmark" href="{% url 'home' %}">{{ site.full_name }}</a>
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Menyu" aria-expanded="false" aria-controls="site-nav"><i class="bi bi-list"></i></button>
+      <nav class="nav" id="site-nav">
+        <a class="text-link" href="{% url 'home' %}#about">Men haqimda</a>
+        <a class="text-link" href="{% url 'project_list' %}">Ishlarim</a>
+        <a class="text-link" href="{% url 'post_list' %}">Blog</a>
+        {% if site.telegram_channel_url %}<a class="text-link" href="{{ site.telegram_channel_url }}" target="_blank" rel="noopener">Telegram kanal</a>{% endif %}
+        <a class="btn" href="{% url 'home' %}#contact">Bog'lanish</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>{% block content %}{% endblock %}</main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>© {% now "Y" %} {{ site.full_name }}{% if site.footer_text %} · {{ site.footer_text }}{% endif %}</span>
+      <nav class="footer-links">
+        {% if site.email %}<a href="mailto:{{ site.email }}">{{ site.email }}</a>{% endif %}
+        {% if site.phone %}<a href="tel:{{ site.phone|cut:' ' }}">{{ site.phone }}</a>{% endif %}
+        {% for s in site.social_links %}<a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.name }}</a>{% endfor %}
+        <a href="{% url 'privacy' %}">Maxfiylik</a>
+      </nav>
+    </div>
+  </footer>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="round-btn lightbox-close" type="button" aria-label="Yopish"><i class="bi bi-x-lg"></i></button>
+    <button class="round-btn lightbox-prev" type="button" aria-label="Oldingi"><i class="bi bi-chevron-left"></i></button>
+    <img alt="">
+    <button class="round-btn lightbox-next" type="button" aria-label="Keyingi"><i class="bi bi-chevron-right"></i></button>
+  </div>
+  <script src="{% static 'js/main.js' %}" defer></script>
+</body>
+</html>

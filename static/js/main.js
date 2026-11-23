@@ -14,25 +14,30 @@
     });
   }
 
-  // Logotiplar lentasi: chap/o'ng tugmalar
-  document.querySelectorAll(".logo-controls").forEach(function (controls) {
-    var track = document.getElementById(controls.dataset.for);
-    if (!track) return;
-    var buttons = controls.querySelectorAll("button");
-    function update() {
-      var max = track.scrollWidth - track.clientWidth - 2;
-      controls.hidden = max <= 0;
-      buttons[0].disabled = track.scrollLeft <= 2;
-      buttons[1].disabled = track.scrollLeft >= max;
+  // Logotiplar lentasi: logotiplar kam bo'lsa ham ekranni to'ldirsin, tezlik bir xil bo'lsin
+  var MARQUEE_SPEED = 50; // px/soniya
+  document.querySelectorAll(".js-marquee").forEach(function (marquee) {
+    var groups = marquee.querySelectorAll(".logo-group");
+    if (groups.length !== 2) return;
+    var originals = Array.prototype.slice.call(groups[0].children);
+    if (!originals.length) return;
+    function fill() {
+      var need = Math.max(marquee.clientWidth, window.screen.width || 0);
+      var guard = 0;
+      while (groups[0].scrollWidth < need && guard++ < 20) {
+        originals.forEach(function (li) {
+          var copy = li.cloneNode(true);
+          copy.setAttribute("aria-hidden", "true");
+          copy.querySelectorAll("a").forEach(function (a) { a.tabIndex = -1; });
+          copy.querySelectorAll("img").forEach(function (img) { img.alt = ""; });
+          groups[0].appendChild(copy);
+          groups[1].appendChild(copy.cloneNode(true));
+        });
+      }
+      marquee.style.setProperty("--marquee-duration", Math.max(groups[0].scrollWidth / MARQUEE_SPEED, 10) + "s");
     }
-    buttons.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        track.scrollBy({ left: Number(btn.dataset.dir) * track.clientWidth * 0.8, behavior: "smooth" });
-      });
-    });
-    track.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    update();
+    fill();
+    window.addEventListener("resize", fill);
   });
 
   // Minimal video pleyer

@@ -1,13 +1,15 @@
 /* =========================================================================
    Admin dizayn tizimi — qora ramka, och panel, oq kartalar, ko'k aksent.
-   Shrift: Space Grotesk. Ikonka/stiker o'rniga sayt favicon'lari.
+   Shrift: Poppins (matn) + Unbounded (sarlavha) — sayt bilan bir xil.
+   Ikonka/stiker o'rniga sayt favicon'lari.
    Bu fayl <head> oxirida yuklanadi, shuning uchun Django CSS'idan ustun turadi.
    ========================================================================= */
 
 /* ---- Tokenlar ---------------------------------------------------------- */
 html:root,
 html[data-theme] {
-  --ds-font: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ds-font: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ds-font-display: "Unbounded", "Poppins", system-ui, sans-serif;
 
   --ds-frame: #2b2b2b;
   --ds-frame-fg: #f4f4f4;
@@ -218,7 +220,13 @@ body {
 body.ds-shell { background: var(--ds-frame); }
 
 h1, h2, h3, h4, h5 { font-family: var(--ds-font); color: var(--ds-text); letter-spacing: -0.01em; }
-#content h1 { font-size: 1.75rem; font-weight: 600; line-height: 1.25; margin: 0 0 8px; }
+#content h1 { font-family: var(--ds-font-display); font-size: 1.6rem; font-weight: 700; line-height: 1.25; margin: 0 0 8px; }
+/* Sarlavha va katta raqamlar — Unbounded */
+.ds-rail__logo, .ds-greet__title, .ds-section-head h2, .ds-panel__head h2,
+.ds-card__value, .ds-donut__center strong, #header.ds-top--guest #site-name {
+  font-family: var(--ds-font-display);
+  letter-spacing: 0;
+}
 #content > h2 { margin: 0 0 22px; font-size: 1rem; font-weight: 500; color: var(--ds-muted); }
 a:link, a:visited { color: var(--link-fg); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }

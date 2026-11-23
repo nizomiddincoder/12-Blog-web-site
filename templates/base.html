@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+{% load static admin_ui %}<!doctype html>
 <html lang="uz">
 <head>
   <meta charset="utf-8">
@@ -10,7 +10,7 @@
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   {% block og_image %}{% if site.avatar %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ site.avatar.url }}">{% endif %}{% endblock %}
   <meta name="theme-color" content="#0B0B0B">
-  {% if site.avatar %}<link rel="icon" href="{{ site.avatar.url }}">{% endif %}
+  <link rel="icon" type="image/svg+xml" href="{% site_favicon site.initials %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">

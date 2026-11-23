@@ -37,11 +37,11 @@ def site_settings():
 
 @register.simple_tag
 def site_favicon(initials):
-    """Admin tab uchun favicon: qora fonda bosh harflar (data URI)."""
+    """Sayt va admin tab uchun favicon: qora fonda oq bosh harflar (data URI)."""
     letters = "".join(ch for ch in (initials or "?") if ch.isalnum())[:2] or "?"
     svg = (
         "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
-        "<rect width='64' height='64' rx='16' fill='%232f2f2f'/>"
+        "<rect width='64' height='64' rx='16' fill='%230b0b0b'/>"
         "<text x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' "
         f"font-size='28' font-weight='700' fill='%23ffffff'>{letters}</text></svg>"
     )

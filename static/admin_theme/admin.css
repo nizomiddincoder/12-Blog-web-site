@@ -1087,6 +1087,8 @@ a.addlink, a.changelink, a.deletelink, a.viewlink, a.inlineviewlink, a.inlinecha
   margin: -46px 0 18px;
   padding: 0;
 }
+/* Tugma yo'q sahifalarda (masalan, qo'shish ruxsati yo'q) bo'sh ro'yxat sarlavhaga chiqib ketmasin */
+.object-tools:not(:has(li)) { display: none; }
 .object-tools li { margin: 0; height: auto; }
 .object-tools li + li { margin-left: 0; }
 .object-tools a:link, .object-tools a:visited {
@@ -1101,6 +1103,8 @@ a.addlink, a.changelink, a.deletelink, a.viewlink, a.inlineviewlink, a.inlinecha
 }
 .object-tools a.addlink:link, .object-tools a.addlink:visited { background-color: var(--ds-accent); color: var(--ds-on-accent); }
 .change-form #content > h1, .change-list #content > h1 { padding-right: 260px; }
+.change-form #content:not(:has(.object-tools li)) > h1,
+.change-list #content:not(:has(.object-tools li)) > h1 { padding-right: 0; margin-bottom: 18px; }
 
 /* ---- Ro'yxat sahifasi ------------------------------------------------------ */
 /* #changelist Django'da ham .module — uni karta qilmaymiz, ichidagi bloklar karta bo'ladi */

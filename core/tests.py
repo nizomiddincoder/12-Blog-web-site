@@ -373,6 +373,88 @@ class StatsSyncTests(TestCase):
         self.assertIn("o'tkazib", out.getvalue())
 
 
+@override_settings(MAKE_RESULT_SECRET="s3cret-test")
+class MakeResultTests(TestCase):
+    def setUp(self):
+        self.post = Post.objects.create(title="Reel test")
+        self.delivery = PostDelivery.objects.create(post=self.post, platform="instagram",
+                                                    status=PostDelivery.Status.QUEUED)
+
+    def send(self, body, secret="s3cret-test"):
+        headers = {"HTTP_X_MAKE_SECRET": secret} if secret is not None else {}
+        return self.client.post("/api/make/result/", data=json.dumps(body),
+                                content_type="application/json", **headers)
+
+    def test_rejects_wrong_secret(self):
+        self.assertEqual(self.send({"post_id": self.post.pk, "platform": "instagram", "external_id": "1"},
+                                   secret="nope").status_code, 403)
+        self.assertEqual(self.send({"post_id": self.post.pk, "platform": "instagram", "external_id": "1"},
+                                   secret=None).status_code, 403)
+
+    def test_saves_external_id_and_marks_sent(self):
+        resp = self.send({"post_id": self.post.pk, "platform": "instagram", "external_id": "178900",
+                          "url": "https://instagram.com/p/abc"})
+        self.assertEqual(resp.status_code, 200)
+        self.delivery.refresh_from_db()
+        self.assertEqual(self.delivery.external_ids, ["178900"])
+        self.assertEqual(self.delivery.status, PostDelivery.Status.SENT)
+        self.assertIsNotNone(self.delivery.sent_at)
+
+    def test_unknown_delivery_is_404(self):
+        resp = self.send({"post_id": self.post.pk, "platform": "youtube", "external_id": "x"})
+        self.assertEqual(resp.status_code, 404)
+
+
+class PostStatsRuleTests(TestCase):
+    def make_sent(self, platform, days_ago, ext="ID1"):
+        post = Post.objects.create(title=f"{platform} {days_ago}")
+        return PostDelivery.objects.create(
+            post=post, platform=platform, status=PostDelivery.Status.SENT,
+            external_ids=[ext], sent_at=timezone.now() - timedelta(days=days_ago))
+
+    def test_thirty_day_window_and_cadence(self):
+        from core import post_stats
+        from core.stats_models import PostStat as PS
+
+        fresh = self.make_sent("instagram", 1)       # 1 kun: kuniga bir marta -> due
+        old = self.make_sent("instagram", 31)        # 30 kundan keyin -> yo'q
+        telegram = self.make_sent("telegram", 1)     # faqat IG/YT -> yo'q
+        self.assertEqual([d.pk for d in post_stats.due_targets()], [fresh.pk])
+
+        PS.objects.create(post=fresh.post, platform="instagram", external_id="ID1", metric="likes", value=1)
+        self.assertEqual(post_stats.due_targets(), [])  # bugun allaqachon olingan
+
+        week_old = self.make_sent("youtube", 10)     # 7 kundan keyin: haftada bir marta
+        PS.objects.create(post=week_old.post, platform="youtube", external_id="ID1", metric="views", value=5)
+        PS.objects.filter(post=week_old.post).update(fetched_at=timezone.now() - timedelta(days=2))
+        self.assertEqual(post_stats.due_targets(), [])
+        self.assertNotIn(old.pk, [d.pk for d in post_stats.due_targets()])
+        self.assertNotIn(telegram.pk, [d.pk for d in post_stats.due_targets()])
+
+    def test_parse_matches_only_requested_ids(self):
+        from core import post_stats
+
+        d = self.make_sent("instagram", 1, ext="IG-1")
+        text = json.dumps({"items": [
+            {"platform": "instagram", "external_id": "IG-1", "likes": 12, "comments": 3, "views": None},
+            {"platform": "instagram", "external_id": "UNKNOWN", "likes": 99},
+        ]})
+        rows = post_stats.parse(text, [d])
+        self.assertEqual(sorted((m, v) for _, m, v in rows), [("comments", 3.0), ("likes", 12.0)])
+
+
+class TelegramSubscribersTests(TestCase):
+    @override_settings(TELEGRAM_BOT_TOKEN="1:T", TELEGRAM_CHANNEL_ID="@kanal")
+    def test_subscriber_count_saved(self):
+        from core import stats_sync
+        from core.stats_models import StatSnapshot
+
+        with mock.patch("core.publishers.telegram.requests.post", return_value=FakeResponse(42)):
+            self.assertEqual(stats_sync.sync_telegram(), 1)
+        row = StatSnapshot.objects.get(platform="telegram")
+        self.assertEqual((row.metric, row.value), ("subscribers", 42.0))
+
+
 class TextTests(TestCase):
     def test_caption_is_truncated_to_limit(self):
         post = Post(title="Sarlavha", content="😀 so'z " * 500, slug="s")

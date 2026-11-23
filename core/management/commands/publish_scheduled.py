@@ -6,29 +6,44 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from core import publishing, stats_sync
+from core import post_stats, publishing, stats_sync
 
 log = logging.getLogger("core.stats")
 
 STATS_RETRY = timedelta(hours=6)  # xato bo'lsa, Claude'ga har daqiqada emas, 6 soatda bir marta uradi
-_last_stats_attempt = None
+_last_attempt = {}
+
+
+def _retry_ok(key):
+    last = _last_attempt.get(key)
+    return not last or timezone.now() - last >= STATS_RETRY
 
 
 def maybe_sync_stats():
-    """Statistika 20 soatdan eski bo'lsa yangilaydi. Muvaffaqiyatsizlikda tez-tez qayta urinmaydi."""
-    global _last_stats_attempt
+    """Statistikani yangilaydi: kunlik umumiy raqamlar, Telegram va postlar bo'yicha (30 kun)."""
+    if settings.TELEGRAM_BOT_TOKEN and stats_sync.is_stale(20, "telegram") and _retry_ok("telegram"):
+        _last_attempt["telegram"] = timezone.now()
+        try:
+            stats_sync.sync_telegram()
+        except Exception as exc:  # tarmoq/Telegram xatosi statistikani to'xtatmasin
+            log.warning("Telegram obunachilari olinmadi: %s", exc)
+
     if not (settings.ANTHROPIC_API_KEY and settings.COMPOSIO_API_KEY):
         return
-    if not stats_sync.is_stale():
-        return
-    if _last_stats_attempt and timezone.now() - _last_stats_attempt < STATS_RETRY:
-        return
-    _last_stats_attempt = timezone.now()
-    try:
-        count = stats_sync.sync()
-        log.info("Kunlik statistika yangilandi: %s ta ko'rsatkich", count)
-    except stats_sync.StatsError as exc:
-        log.warning("Kunlik statistika olinmadi: %s", exc)
+    if stats_sync.is_stale(20) and _retry_ok("daily"):
+        _last_attempt["daily"] = timezone.now()
+        try:
+            count = stats_sync.sync()
+            log.info("Kunlik statistika yangilandi: %s ta ko'rsatkich", count)
+        except stats_sync.StatsError as exc:
+            log.warning("Kunlik statistika olinmadi: %s", exc)
+
+    if post_stats.due_targets() and _retry_ok("posts"):
+        _last_attempt["posts"] = timezone.now()
+        try:
+            post_stats.sync_due()
+        except stats_sync.StatsError as exc:
+            log.warning("Post statistikasi olinmadi: %s", exc)
 
 
 class Command(BaseCommand):

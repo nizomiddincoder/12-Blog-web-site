@@ -60,7 +60,7 @@ def _num(value):
         return None
 
 
-def build_request():
+def build_request(prompt=PROMPT):
     if not settings.ANTHROPIC_API_KEY:
         raise StatsError("ANTHROPIC_API_KEY ko'rsatilmagan.")
     if not settings.COMPOSIO_API_KEY:
@@ -74,7 +74,7 @@ def build_request():
     body = {
         "model": settings.ANTHROPIC_MODEL,
         "max_tokens": 2000,
-        "messages": [{"role": "user", "content": PROMPT}],
+        "messages": [{"role": "user", "content": prompt}],
         "mcp_servers": [{
             "type": "url",
             "url": settings.COMPOSIO_MCP_URL,
@@ -86,9 +86,9 @@ def build_request():
     return headers, body
 
 
-def fetch_raw():
+def fetch_raw(prompt=PROMPT):
     """Claude API'ga so'rov yuboradi va matnli javobni qaytaradi."""
-    headers, body = build_request()
+    headers, body = build_request(prompt)
     try:
         resp = requests.post(API_URL, headers=headers, json=body, timeout=(20, 300))
     except requests.RequestException as exc:
@@ -146,7 +146,21 @@ def sync():
     return len(rows)
 
 
-def is_stale(hours=20):
+def sync_telegram():
+    """Telegram kanal obunachilari sonini (Bot API orqali, Composio'siz) saqlaydi."""
+    if not settings.TELEGRAM_BOT_TOKEN or not settings.TELEGRAM_CHANNEL_ID:
+        return 0
+    from .publishers.telegram import call
+
+    count = call("getChatMemberCount", data={"chat_id": settings.TELEGRAM_CHANNEL_ID})
+    StatSnapshot.objects.create(platform="telegram", metric="subscribers", value=float(count))
+    return 1
+
+
+def is_stale(hours=20, platform=None):
     """Oxirgi yangilanish shu vaqtdan eski bo'lsa True."""
-    last = StatSnapshot.objects.order_by("-fetched_at").first()
+    qs = StatSnapshot.objects.all()
+    if platform:
+        qs = qs.filter(platform=platform)
+    last = qs.order_by("-fetched_at").first()
     return not last or last.fetched_at < timezone.now() - timedelta(hours=hours)

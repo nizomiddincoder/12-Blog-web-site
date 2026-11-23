@@ -360,7 +360,7 @@ class PostQuerySet(models.QuerySet):
         return self.filter(is_published=True, published_at__lte=timezone.now())
 
 
-from .stats_models import StatSnapshot  # noqa: E402,F401  (migratsiya va admin uchun)
+from .stats_models import PostStat, StatSnapshot  # noqa: E402,F401  (migratsiya va admin uchun)
 
 
 class Platform(models.TextChoices):

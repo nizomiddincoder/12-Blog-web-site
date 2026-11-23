@@ -27,7 +27,7 @@
 <section class="section" id="companies">
   <div class="container">
     <div class="section-head">
-      <h2>Men bilan ishlagan kompaniyalar</h2>
+      <div><span class="kicker">Hamkorlar</span><h2>Men bilan ishlagan kompaniyalar</h2></div>
       <div class="logo-controls" data-for="logo-track">
         <button class="round-btn" type="button" data-dir="-1" aria-label="Oldingi"><i class="bi bi-arrow-left"></i></button>
         <button class="round-btn" type="button" data-dir="1" aria-label="Keyingi"><i class="bi bi-arrow-right"></i></button>
@@ -50,7 +50,7 @@
 {% if services %}
 <section class="section">
   <div class="container">
-    <div class="section-head"><h2>Nima bilan shug'ullanaman</h2></div>
+    <div class="section-head"><div><span class="kicker">Xizmatlar</span><h2>Nima bilan shug'ullanaman</h2></div></div>
     <div class="grid grid-2">
       {% for s in services %}
       <div class="card card-pad">
@@ -71,7 +71,8 @@
       {% if site.avatar %}<img src="{{ site.avatar.url }}" alt="{{ site.full_name }}" loading="lazy">{% else %}<span class="initials">{{ site.initials }}</span>{% endif %}
     </div>
     <div>
-      <h2>{{ site.full_name }}</h2>
+      <span class="kicker">Men kimman</span>
+      <h2 style="margin-top:16px">{{ site.full_name }}</h2>
       {% if site.headline %}<p class="role">{{ site.headline }}</p>{% endif %}
       {% if site.about %}<div class="prose">{{ site.about|urlize|linebreaks }}</div>{% endif %}
       <ul class="facts">
@@ -93,7 +94,7 @@
 {% if experiences %}
 <section class="section" id="experience">
   <div class="container">
-    <div class="section-head"><h2>Ish faoliyatim</h2></div>
+    <div class="section-head"><div><span class="kicker">Tajriba</span><h2>Ish faoliyatim</h2></div></div>
     <ol class="roadmap">
       {% for e in experiences %}
       <li>
@@ -115,7 +116,7 @@
 <section class="section" id="works">
   <div class="container">
     <div class="section-head">
-      <h2>Qilgan ishlarim</h2>
+      <div><span class="kicker">Portfolio</span><h2>Qilgan ishlarim</h2></div>
       {% if projects_total > projects|length %}<a class="arrow-link" href="{% url 'project_list' %}">Barchasi <i class="bi bi-arrow-right"></i></a>{% endif %}
     </div>
     <div class="grid grid-2">
@@ -129,7 +130,7 @@
 {% if testimonials %}
 <section class="section">
   <div class="container">
-    <div class="section-head"><h2>Men haqimda nima deyishadi</h2></div>
+    <div class="section-head"><div><span class="kicker">Fikrlar</span><h2>Men haqimda nima deyishadi</h2></div></div>
     <div class="grid grid-2">
       {% for t in testimonials %}
       <figure class="card card-pad quote">
@@ -150,7 +151,7 @@
 <section class="section" id="blog">
   <div class="container">
     <div class="section-head">
-      <h2>So'nggi yangiliklar</h2>
+      <div><span class="kicker">Blog</span><h2>So'nggi yangiliklar</h2></div>
       <a class="arrow-link" href="{% url 'post_list' %}">Barcha postlar <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="grid grid-3">
@@ -164,7 +165,7 @@
 {% if faqs %}
 <section class="section" id="faq">
   <div class="container">
-    <div class="section-head"><h2>Ko'p beriladigan savollar</h2></div>
+    <div class="section-head"><div><span class="kicker">Savol-javob</span><h2>Ko'p beriladigan savollar</h2></div></div>
     <div class="faq">
       {% for f in faqs %}
       <details>

@@ -153,6 +153,9 @@ ANTHROPIC_MCP_BETA = os.getenv("ANTHROPIC_MCP_BETA", "mcp-client-2025-11-20").st
 COMPOSIO_MCP_URL = os.getenv("COMPOSIO_MCP_URL", "https://connect.composio.dev/mcp").strip()
 COMPOSIO_API_KEY = os.getenv("COMPOSIO_API_KEY", "").strip()
 
+# Make natijalarini (post ID lari) qabul qilish uchun maxfiy kalit. Make shu kalitni sarlavhada yuboradi.
+MAKE_RESULT_SECRET = os.getenv("MAKE_RESULT_SECRET", "").strip()
+
 # Make.com orqali yuborish: berilsa, Instagram postlari shu webhook'ga ketadi (Meta ilovasi kerak emas).
 MAKE_INSTAGRAM_WEBHOOK_URL = os.getenv("MAKE_INSTAGRAM_WEBHOOK_URL", "").strip()
 

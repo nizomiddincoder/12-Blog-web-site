@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import connect_views, views
+from . import connect_views, make_results, views
 
 urlpatterns = [
     path("", views.home, name="home"),
@@ -10,6 +10,7 @@ urlpatterns = [
     path("ishlar/<slug:slug>/", views.project_detail, name="project_detail"),
     path("robots.txt", views.robots_txt, name="robots_txt"),
     path("maxfiylik/", views.privacy, name="privacy"),
+    path("api/make/result/", make_results.make_result, name="make_result"),
     path("connect/<str:platform>/", connect_views.connect_start, name="connect_start"),
     path("connect/<str:platform>/callback/", connect_views.connect_callback, name="connect_callback"),
     path("connect/<str:platform>/remove/", connect_views.connect_remove, name="connect_remove"),

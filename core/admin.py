@@ -19,6 +19,7 @@ from .models import (
     ProjectMedia,
     Service,
     SiteSettings,
+    PostStat,
     SocialAccount,
     StatSnapshot,
     Stat,
@@ -423,8 +424,16 @@ class PostAdmin(MediaUploadAdminMixin, admin.ModelAdmin):
 # --------------------------------------------------------------------------- #
 @admin.register(StatSnapshot)
 class StatSnapshotAdmin(admin.ModelAdmin):
-    list_display = ("fetched_at", "platform", "metric", "value")
+    list_display = ("fetched_at", "platform_label", "metric_label", "value")
     list_filter = ("platform", "metric")
+
+    @admin.display(description="Platforma")
+    def platform_label(self, obj):
+        return obj.platform_label
+
+    @admin.display(description="Ko'rsatkich")
+    def metric_label(self, obj):
+        return obj.metric_label
     date_hierarchy = "fetched_at"
     ordering = ("-fetched_at",)
     actions = None
@@ -434,6 +443,25 @@ class StatSnapshotAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(PostStat)
+class PostStatAdmin(admin.ModelAdmin):
+    list_display = ("fetched_at", "post", "platform", "metric_label", "value")
+    list_filter = ("platform", "metric")
+    search_fields = ("post__title",)
+    date_hierarchy = "fetched_at"
+    ordering = ("-fetched_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Ko'rsatkich")
+    def metric_label(self, obj):
+        return obj.metric_label
 
 
 @admin.register(SocialAccount)
